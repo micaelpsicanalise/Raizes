@@ -108,7 +108,7 @@ insert into public.culturas (nome, slug, regiao_origem, periodo, resumo, marcos,
   'guarani',
   'Bacia do Prata — Paraguai, sul do Brasil, Argentina, Bolívia',
   'Presença na região há mais de 2.000 anos',
-  'O povo Guarani tem uma das cosmologias mais estudadas da América do Sul, centrada na busca da "Terra sem Males" (Yvy Marãe\'ỹ) — uma jornada espiritual e territorial que segue viva na cultura guarani contemporânea.',
+  'O povo Guarani tem uma das cosmologias mais estudadas da América do Sul, centrada na busca da "Terra sem Males" (Yvy Marãe''ỹ) — uma jornada espiritual e territorial que segue viva na cultura guarani contemporânea.',
   '[
     {"ano":"Há mais de 2.000 anos","texto":"Expansão de povos de língua guarani pela bacia do Prata."},
     {"ano":"Séc. XVI–XVIII","texto":"Contato com colonizadores e as reduções jesuíticas no Paraguai."},
