@@ -571,7 +571,12 @@
     atualizarLabelsAbas();
     renderBibliotecaList();
     renderHistoriaList();
-    showView("home");
+    if (window.location.hash === "#historia") {
+      showView("historia");
+      setHistoriaModo("mapa");
+    } else {
+      showView("home");
+    }
   }
 
   /* ==========================================================

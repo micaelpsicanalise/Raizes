@@ -104,6 +104,11 @@
     max-width:1080px; margin:0 auto; padding:0 24px;
   }
   @media (min-width:760px){ .feature-grid{ grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); } }
+
+  /* ---------- MAPA MUNDIAL ---------- */
+  .mapa-spot{ background:var(--bg-warm); }
+  .mapa-preview{ display:block; width:100%; max-width:680px; margin:0 auto; height:auto; }
+
   .feature-card{
     background:#fff; border:1px solid var(--line); border-radius:20px;
     padding:28px 24px; text-align:left;
@@ -164,6 +169,7 @@
         <span>Raízes</span>
       </div>
       <div class="nav-links">
+        <a href="#mapa">Mapa mundial</a>
         <a href="#recursos">Recursos</a>
         <a href="#como-funciona">Como funciona</a>
       </div>
@@ -175,12 +181,12 @@
   <header class="hero">
     <div class="wrap">
       <div>
-        <p class="eyebrow">Tradições e raízes</p>
-        <h1>Seus guias, pontos e<br>orações, sempre à mão.</h1>
-        <p class="sub">Ouça os pontos cantados, acompanhe a letra e volte todo dia — um espaço de prática, não um horóscopo genérico.</p>
+        <p class="eyebrow">Povos originários</p>
+        <h1>Suas raízes — e as de<br>povos do mundo inteiro.</h1>
+        <p class="sub">Um mapa das culturas e povos originários que vieram antes, com suas rotas de migração — e, junto, os guias, pontos cantados e orações da sua prática do dia a dia.</p>
         <div class="hero-ctas">
           <a class="btn btn-primary" href="app/">Entrar com Google</a>
-          <a class="btn btn-ghost" href="#como-funciona" style="border-color:var(--line-on-dark); color:#fff;">Ver como funciona</a>
+          <a class="btn btn-ghost" href="#mapa" style="border-color:var(--line-on-dark); color:#fff;">Ver o mapa</a>
         </div>
       </div>
 
@@ -191,26 +197,71 @@
         <g class="ring-anim reverse">
           <circle cx="160" cy="160" r="100" stroke="#B98A2C" stroke-width="1.4" stroke-dasharray="2 6"/>
         </g>
-        <!-- waveform central, remete aos pontos cantados -->
+        <!-- pontos e rotas, remetendo ao mapa de povos originários -->
+        <g stroke="#EADFC4" stroke-width="1" stroke-dasharray="3 4" opacity="0.55" fill="none">
+          <path d="M110,150 Q160,100 210,140"/>
+          <path d="M110,150 Q140,210 190,205"/>
+          <path d="M210,140 Q230,175 190,205"/>
+        </g>
         <g fill="#EADFC4">
-          <rect class="bar" x="120" y="150" width="6" height="20" rx="3" style="animation-delay:-0.1s"/>
-          <rect class="bar" x="133" y="135" width="6" height="50" rx="3" style="animation-delay:-0.5s"/>
-          <rect class="bar" x="146" y="120" width="6" height="80" rx="3" style="animation-delay:-0.9s"/>
-          <rect class="bar" x="159" y="130" width="6" height="60" rx="3" style="animation-delay:-1.3s"/>
-          <rect class="bar" x="172" y="110" width="6" height="100" rx="3" style="animation-delay:-1.7s"/>
-          <rect class="bar" x="185" y="140" width="6" height="40" rx="3" style="animation-delay:-2.1s"/>
-          <rect class="bar" x="198" y="152" width="6" height="16" rx="3" style="animation-delay:-0.3s"/>
+          <circle cx="110" cy="150" r="5"/>
+          <circle cx="210" cy="140" r="5"/>
+          <circle cx="190" cy="205" r="5"/>
+          <circle cx="150" cy="115" r="3.5"/>
+          <circle cx="235" cy="165" r="3.5"/>
         </g>
       </svg>
     </div>
   </header>
 
+  <!-- ================= MAPA MUNDIAL ================= -->
+  <section id="mapa" class="mapa-spot">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Mapa mundial</p>
+        <h2>De onde vêm as tradições</h2>
+        <p>Povos originários da África, Américas, Europa, Ásia e Oceania — e as rotas históricas de migração e transmissão que os ligam.</p>
+      </div>
+
+      <svg class="mapa-preview" viewBox="0 0 680 300" role="img">
+        <title>Prévia do mapa mundial de povos originários</title>
+        <path d="M270,145 Q225,90 190,140" fill="none" stroke="var(--gold)" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+        <path d="M470,50 Q330,35 190,50" fill="none" stroke="var(--gold)" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+        <path d="M420,75 Q460,110 470,150" fill="none" stroke="var(--gold)" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+
+        <g font-family="Inter, sans-serif">
+          <rect x="40" y="50" width="150" height="60" rx="10" fill="var(--bg)" stroke="var(--line)" stroke-dasharray="4 3"/>
+          <text x="52" y="86" font-size="13" fill="var(--ink)">América</text>
+
+          <rect x="270" y="50" width="150" height="60" rx="10" fill="var(--bg)" stroke="var(--line)" stroke-dasharray="4 3"/>
+          <text x="282" y="86" font-size="13" fill="var(--ink)">Europa</text>
+
+          <rect x="270" y="140" width="150" height="60" rx="10" fill="var(--bg)" stroke="var(--line)" stroke-dasharray="4 3"/>
+          <text x="282" y="176" font-size="13" fill="var(--ink)">África</text>
+
+          <rect x="470" y="50" width="150" height="60" rx="10" fill="var(--bg)" stroke="var(--line)" stroke-dasharray="4 3"/>
+          <text x="482" y="86" font-size="13" fill="var(--ink)">Sibéria &amp; Ásia</text>
+
+          <rect x="470" y="140" width="150" height="60" rx="10" fill="var(--bg)" stroke="var(--line)" stroke-dasharray="4 3"/>
+          <text x="482" y="176" font-size="13" fill="var(--ink)">Oceania</text>
+
+          <rect x="270" y="230" width="150" height="50" rx="10" fill="var(--bg)" stroke="var(--line)" stroke-dasharray="4 3"/>
+          <text x="282" y="260" font-size="13" fill="var(--ink)">Oriente Médio</text>
+        </g>
+      </svg>
+
+      <div class="hero-ctas" style="justify-content:center; margin-top:28px;">
+        <a class="btn btn-primary" href="app/#historia">Explorar o mapa completo</a>
+      </div>
+    </div>
+  </section>
+
   <!-- ================= RECURSOS ================= -->
   <section id="recursos">
     <div class="section-head">
-      <p class="eyebrow">O que tem dentro</p>
-      <h2>Feito pra prática do dia a dia</h2>
-      <p>Sem enrolação, sem anúncio no meio — só o que ajuda a manter a prática viva.</p>
+      <p class="eyebrow">Além do mapa</p>
+      <h2>Um espaço pra prática do dia a dia</h2>
+      <p>Guias, pontos cantados e orações da sua tradição — sem enrolação, sem anúncio no meio.</p>
     </div>
     <div class="feature-grid">
       <div class="feature-card">
