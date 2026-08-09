@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Raízes</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2.111.0"></script>
+<style>
+  :root{
+    --bg:#F6F2E9; --ink:#2B2118; --ink-soft:#6B5D4F;
+    --terra:#A15C32; --terra-dark:#5C3620; --gold:#B98A2C; --gold-soft:#EADFC4;
+    --line:rgba(30,42,32,0.16); --danger:#A33B2E;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Inter', system-ui, sans-serif; font-size:14px;
+  }
+  .wrap{ max-width:920px; margin:0 auto; padding:28px 20px 80px; }
+  h1{ font-size:20px; margin:0 0 4px; }
+  h2{ font-size:16px; margin:0 0 14px; }
+  .muted{ color:var(--ink-soft); font-size:12.5px; }
+
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+    border-radius:10px; padding:9px 16px; font-size:13px; font-weight:600;
+    border:1px solid var(--line); background:#fff; color:var(--ink);
+  }
+  .btn-primary{ background:var(--terra-dark); color:var(--gold-soft); border-color:var(--terra-dark); }
+  .btn-danger{ color:var(--danger); border-color:var(--danger); background:#fff; }
+  .btn-sm{ padding:6px 12px; font-size:12px; }
+
+  /* login gate */
+  .gate{ min-height:100vh; align-items:center; justify-content:center; flex-direction:column; gap:14px; text-align:center; padding:20px; }
+
+  /* tabs */
+  .tabs{ display:flex; gap:8px; margin:18px 0 22px; border-bottom:1px solid var(--line); }
+  .tab-btn{
+    padding:10px 4px; margin-right:18px; font-size:13.5px; font-weight:600;
+    color:var(--ink-soft); cursor:pointer; border-bottom:2px solid transparent;
+  }
+  .tab-btn.active{ color:var(--ink); border-color:var(--gold); }
+
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:20px; margin-bottom:18px; }
+  label{ display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin:12px 0 5px; }
+  label:first-child{ margin-top:0; }
+  input[type=text], input[type=number], textarea, select{
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:9px;
+    font-family:inherit; font-size:13.5px; background:var(--bg);
+  }
+  textarea{ min-height:80px; resize:vertical; }
+  .row{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .checkbox-row{ display:flex; align-items:center; gap:8px; margin-top:14px; }
+  .checkbox-row input{ width:auto; }
+
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th, td{ text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  th{ font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); }
+  audio{ height:32px; max-width:180px; }
+  .badge{ display:inline-block; padding:2px 8px; border-radius:100px; font-size:11px; background:var(--gold-soft); color:var(--ink); }
+  .badge.off{ background:#eee; color:var(--ink-soft); }
+
+  #upload-status{ font-size:12.5px; margin-top:8px; color:var(--ink-soft); }
+  #upload-status.error{ color:var(--danger); }
+</style>
+</head>
+<body>
+
+  <!-- ============ LOGIN GATE ============ -->
+  <div id="view-gate" class="gate view active">
+    <h1>Admin — Raízes</h1>
+    <button class="btn btn-primary" onclick="onSignIn()">Entrar com Google</button>
+    <p class="muted" id="gate-msg"></p>
+  </div>
+
+  <!-- ============ PAINEL ============ -->
+  <div id="view-admin" class="view">
+    <div class="wrap">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h1>Admin — Raízes</h1>
+          <p class="muted" id="admin-email"></p>
+        </div>
+        <button class="btn btn-sm" onclick="onSignOut()">Sair</button>
+      </div>
+
+      <div class="tabs">
+        <span class="tab-btn active" id="tab-guias" onclick="switchTab('guias')">Guias</span>
+        <span class="tab-btn" id="tab-conteudos" onclick="switchTab('conteudos')">Conteúdos</span>
+        <span class="tab-btn" id="tab-culturas" onclick="switchTab('culturas')">Culturas</span>
+        <span class="tab-btn" id="tab-buzios" onclick="switchTab('buzios')">Búzios</span>
+      </div>
+
+      <!-- ---------- GUIAS ---------- -->
+      <div id="panel-guias">
+        <div class="card">
+          <h2 id="guia-form-title">Novo guia</h2>
+          <input type="hidden" id="guia-id">
+          <label>Nome</label>
+          <input type="text" id="guia-nome" placeholder="Ogum">
+          <div class="row">
+            <div>
+              <label>Slug (usado na URL, sem espaço)</label>
+              <input type="text" id="guia-slug" placeholder="ogum">
+            </div>
+            <div>
+              <label>Tradição</label>
+              <input type="text" id="guia-tradicao" list="lista-tradicoes" placeholder="umbanda">
+              <datalist id="lista-tradicoes">
+                <option value="umbanda">
+                <option value="candomble">
+                <option value="vodum">
+                <option value="santeria">
+                <option value="jurema">
+                <option value="quimbanda">
+              </datalist>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Grupo</label>
+              <select id="guia-grupo">
+                <option value="principal">Principal (Orixá / Lwa / Orisha / Nkisi...)</option>
+                <option value="auxiliar">Auxiliar (Entidade: preto-velho, caboclo, Gede...)</option>
+              </select>
+            </div>
+            <div>
+              <label>Categoria (rótulo livre, só descritivo)</label>
+              <input type="text" id="guia-categoria" placeholder="Preto-velho, Lwa Rada, Orisha...">
+            </div>
+          </div>
+          <label>Origem cultural (catálogo estruturado — evita digitar de novo em cada guia)</label>
+          <select id="guia-origem-cultural"><option value="">— nenhuma —</option></select>
+          <label>Linha (aparece no card do dia)</label>
+          <input type="text" id="guia-linha" placeholder="linha de guerreiro">
+          <label>Descrição</label>
+          <textarea id="guia-descricao" placeholder="Texto curto de apresentação"></textarea>
+          <label>Ponto riscado (imagem) — deixe em branco pra manter o atual</label>
+          <input type="hidden" id="guia-ponto-riscado-url">
+          <input type="file" id="guia-riscado-arquivo" accept="image/*">
+          <p id="guia-riscado-upload-status" class="muted" style="margin-top:6px;"></p>
+          <img id="guia-riscado-preview" style="display:none; width:120px; height:120px; object-fit:cover; border-radius:12px; margin-top:8px;">
+          <div class="row">
+            <div>
+              <label>Ordem</label>
+              <input type="number" id="guia-ordem" value="0">
+            </div>
+            <div class="checkbox-row" style="margin-top:32px;">
+              <input type="checkbox" id="guia-ativo" checked>
+              <label style="margin:0;">Ativo (visível no app)</label>
+            </div>
+          </div>
+          <div style="margin-top:16px; display:flex; gap:10px;">
+            <button class="btn btn-primary" onclick="saveGuia()">Salvar guia</button>
+            <button class="btn" onclick="resetGuiaForm()">Novo guia</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Guias cadastrados</h2>
+          <table>
+            <thead><tr><th>Nome</th><th>Tradição</th><th>Grupo / Categoria</th><th>Ordem</th><th>Status</th><th></th></tr></thead>
+            <tbody id="guias-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ---------- CONTEÚDOS ---------- -->
+      <div id="panel-conteudos" style="display:none;">
+        <div class="card">
+          <h2 id="conteudo-form-title">Novo conteúdo</h2>
+          <input type="hidden" id="conteudo-id">
+          <input type="hidden" id="conteudo-audio-url">
+          <input type="hidden" id="conteudo-duracao">
+          <div class="row">
+            <div>
+              <label>Guia</label>
+              <select id="conteudo-guia"></select>
+            </div>
+            <div>
+              <label>Tipo</label>
+              <select id="conteudo-tipo">
+                <option value="ponto">Ponto cantado</option>
+                <option value="oracao">Oração</option>
+                <option value="conto">Itã (conto / história)</option>
+              </select>
+            </div>
+          </div>
+          <label>Odu relacionado (opcional — só faz sentido pra um Itã)</label>
+          <select id="conteudo-odu"><option value="">— nenhum —</option></select>
+          <label>Título</label>
+          <input type="text" id="conteudo-titulo" placeholder="Saudação a Ogum">
+          <label>Letra / Texto</label>
+          <textarea id="conteudo-letra" placeholder="Letra do ponto, texto da oração, ou o Itã completo"></textarea>
+          <label>Voz (crédito, opcional)</label>
+          <input type="text" id="conteudo-voz" placeholder="Marcos e Ana">
+
+          <label>Áudio (mp3) — deixe em branco pra manter o atual, se estiver editando. Não obrigatório pra contos/histórias.</label>
+          <input type="file" id="conteudo-arquivo" accept="audio/*">
+          <p id="upload-status"></p>
+          <audio id="conteudo-preview" controls style="display:none; margin-top:8px; width:100%;"></audio>
+
+          <label>Imagem (opcional) — capa do conto, retrato da entidade, etc.</label>
+          <input type="hidden" id="conteudo-imagem-url">
+          <input type="file" id="conteudo-imagem-arquivo" accept="image/*">
+          <p id="conteudo-imagem-status" class="muted" style="margin-top:6px;"></p>
+          <img id="conteudo-imagem-preview" style="display:none; width:160px; height:120px; object-fit:cover; border-radius:12px; margin-top:8px;">
+
+          <div class="row" style="margin-top:12px;">
+            <div>
+              <label>Ordem</label>
+              <input type="number" id="conteudo-ordem" value="0">
+            </div>
+            <div class="checkbox-row" style="margin-top:32px;">
+              <input type="checkbox" id="conteudo-ativo" checked>
+              <label style="margin:0;">Ativo (visível no app)</label>
+            </div>
+          </div>
+
+          <div style="margin-top:16px; display:flex; gap:10px;">
+            <button class="btn btn-primary" id="btn-salvar-conteudo" onclick="saveConteudo()">Salvar conteúdo</button>
+            <button class="btn" onclick="resetConteudoForm()">Novo conteúdo</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Conteúdos cadastrados</h2>
+          <table>
+            <thead><tr><th>Guia</th><th>Título</th><th>Tipo</th><th>Imagem</th><th>Áudio</th><th></th></tr></thead>
+            <tbody id="conteudos-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ---------- CULTURAS (raízes afro-diaspóricas) ---------- -->
+      <div id="panel-culturas" style="display:none;">
+        <div class="card">
+          <h2 id="cultura-form-title">Nova cultura</h2>
+          <input type="hidden" id="cultura-id">
+          <div class="row">
+            <div>
+              <label>Nome</label>
+              <input type="text" id="cultura-nome" placeholder="Nagô / Iorubá">
+            </div>
+            <div>
+              <label>Slug (usado como referência, sem espaço)</label>
+              <input type="text" id="cultura-slug" placeholder="ioruba">
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Região de origem</label>
+              <input type="text" id="cultura-regiao" placeholder="Sudoeste da Nigéria e Benin">
+            </div>
+            <div>
+              <label>Período</label>
+              <input type="text" id="cultura-periodo" placeholder="Trazida ao Brasil entre 1750–1850">
+            </div>
+          </div>
+          <label>Resumo</label>
+          <textarea id="cultura-resumo" placeholder="Texto curto explicando a cultura e sua ligação com as tradições do app"></textarea>
+          <label>Linha do tempo — um marco por linha, no formato "ano | texto"</label>
+          <textarea id="cultura-marcos" placeholder="Séc. XVIII–XIX | Chegada forçada de povos iorubás ao Brasil.&#10;Séc. XIX | Formação dos primeiros terreiros de Candomblé Nagô na Bahia."></textarea>
+          <div class="row">
+            <div>
+              <label>Continente/região (posição no mapa)</label>
+              <select id="cultura-continente">
+                <option value="">— selecionar —</option>
+                <option value="america-norte">América do Norte</option>
+                <option value="america-central-caribe">América Central e Caribe</option>
+                <option value="america-sul">América do Sul</option>
+                <option value="europa">Europa</option>
+                <option value="africa">África</option>
+                <option value="oriente-medio">Oriente Médio</option>
+                <option value="siberia">Sibéria</option>
+                <option value="asia">Ásia</option>
+                <option value="oceania">Oceania</option>
+              </select>
+            </div>
+            <div>
+              <label>Ordem</label>
+              <input type="number" id="cultura-ordem" value="0">
+            </div>
+          </div>
+          <div class="checkbox-row" style="margin-top:10px;">
+            <input type="checkbox" id="cultura-ativo" checked>
+            <label style="margin:0;">Ativa (visível no app)</label>
+          </div>
+          <div style="margin-top:16px; display:flex; gap:10px;">
+            <button class="btn btn-primary" onclick="saveCultura()">Salvar cultura</button>
+            <button class="btn" onclick="resetCulturaForm()">Nova cultura</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Culturas cadastradas</h2>
+          <table>
+            <thead><tr><th>Nome</th><th>Região</th><th>Continente</th><th>Marcos</th><th>Ordem</th><th>Status</th><th></th></tr></thead>
+            <tbody id="culturas-table"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h2 id="migracao-form-title">Nova rota de migração/transmissão</h2>
+          <input type="hidden" id="migracao-id">
+          <label>Nome da rota</label>
+          <input type="text" id="migracao-nome" placeholder="Diáspora transatlântica">
+          <div class="row">
+            <div>
+              <label>Continente de origem</label>
+              <select id="migracao-origem">
+                <option value="america-norte">América do Norte</option>
+                <option value="america-central-caribe">América Central e Caribe</option>
+                <option value="america-sul">América do Sul</option>
+                <option value="europa">Europa</option>
+                <option value="africa">África</option>
+                <option value="oriente-medio">Oriente Médio</option>
+                <option value="siberia">Sibéria</option>
+                <option value="asia">Ásia</option>
+                <option value="oceania">Oceania</option>
+              </select>
+            </div>
+            <div>
+              <label>Continente de destino</label>
+              <select id="migracao-destino">
+                <option value="america-norte">América do Norte</option>
+                <option value="america-central-caribe">América Central e Caribe</option>
+                <option value="america-sul">América do Sul</option>
+                <option value="europa">Europa</option>
+                <option value="africa">África</option>
+                <option value="oriente-medio">Oriente Médio</option>
+                <option value="siberia">Sibéria</option>
+                <option value="asia">Ásia</option>
+                <option value="oceania">Oceania</option>
+              </select>
+            </div>
+          </div>
+          <label>Descrição</label>
+          <textarea id="migracao-descricao" placeholder="Breve explicação da rota histórica"></textarea>
+          <div class="row">
+            <div>
+              <label>Ordem</label>
+              <input type="number" id="migracao-ordem" value="0">
+            </div>
+            <div class="checkbox-row" style="margin-top:32px;">
+              <input type="checkbox" id="migracao-ativo" checked>
+              <label style="margin:0;">Ativa (visível no mapa)</label>
+            </div>
+          </div>
+          <div style="margin-top:16px; display:flex; gap:10px;">
+            <button class="btn btn-primary" onclick="saveMigracao()">Salvar rota</button>
+            <button class="btn" onclick="resetMigracaoForm()">Nova rota</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Rotas cadastradas</h2>
+          <table>
+            <thead><tr><th>Nome</th><th>De</th><th>Para</th><th>Ordem</th><th>Status</th><th></th></tr></thead>
+            <tbody id="migracoes-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ---------- BÚZIOS (Odus) ---------- -->
+      <div id="panel-buzios" style="display:none;">
+        <div class="card">
+          <h2 id="odu-form-title">Novo Odu</h2>
+          <input type="hidden" id="odu-id">
+          <div class="row">
+            <div>
+              <label>Sistema</label>
+              <select id="odu-sistema">
+                <option value="16">16 búzios</option>
+                <option value="18">18 búzios (Angola)</option>
+              </select>
+            </div>
+            <div>
+              <label>Búzios abertos (0 a 16, ou 17/18 no sistema Angola)</label>
+              <input type="number" id="odu-abertos" min="0" max="18" value="0">
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Nome do Odu</label>
+              <input type="text" id="odu-nome" placeholder="Okaran">
+            </div>
+            <div>
+              <label>Orixá / Nkisi (opcional, campo livre)</label>
+              <input type="text" id="odu-orixa" placeholder="Exu">
+            </div>
+          </div>
+          <label>Leitura</label>
+          <textarea id="odu-leitura" placeholder="O texto real dessa jogada, escrito pela casa"></textarea>
+          <div class="row" style="margin-top:12px;">
+            <div>
+              <label>Ordem</label>
+              <input type="number" id="odu-ordem" value="0">
+            </div>
+            <div class="checkbox-row" style="margin-top:32px;">
+              <input type="checkbox" id="odu-ativo" checked>
+              <label style="margin:0;">Ativo</label>
+            </div>
+          </div>
+          <div style="margin-top:16px; display:flex; gap:10px;">
+            <button class="btn btn-primary" onclick="saveOdu()">Salvar Odu</button>
+            <button class="btn" onclick="resetOduForm()">Novo Odu</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Odus cadastrados</h2>
+          <p class="muted" style="margin-bottom:10px;">Uma jogada dupla (Odu composto) sem override abaixo é lida automaticamente juntando o texto do Odu "pai" com o do "mãe".</p>
+          <table>
+            <thead><tr><th>Sistema</th><th>Abertos</th><th>Nome</th><th>Orixá/Nkisi</th><th></th></tr></thead>
+            <tbody id="odus-table"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h2 id="composto-form-title">Nova combinação composta (override)</h2>
+          <input type="hidden" id="composto-id">
+          <p class="muted">Use só quando quiser um texto próprio pra uma combinação específica — ex: os "Meji" (quando os dois lados dão o mesmo número), que tradicionalmente têm peso especial. Sem cadastro aqui, o app junta os dois textos dos Odus primários automaticamente.</p>
+          <div class="row" style="margin-top:12px;">
+            <div>
+              <label>Sistema</label>
+              <select id="composto-sistema">
+                <option value="16">16 búzios</option>
+                <option value="18">18 búzios (Angola)</option>
+              </select>
+            </div>
+            <div>
+              <label>Nome da combinação (opcional)</label>
+              <input type="text" id="composto-nome" placeholder="Obará Meji">
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Abertos — jogada 1 (pai)</label>
+              <input type="number" id="composto-abertos-pai" min="0" max="18" value="0">
+            </div>
+            <div>
+              <label>Abertos — jogada 2 (mãe)</label>
+              <input type="number" id="composto-abertos-mae" min="0" max="18" value="0">
+            </div>
+          </div>
+          <label>Leitura</label>
+          <textarea id="composto-leitura" placeholder="Texto específico dessa combinação"></textarea>
+          <div class="checkbox-row">
+            <input type="checkbox" id="composto-ativo" checked>
+            <label style="margin:0;">Ativo</label>
+          </div>
+          <div style="margin-top:16px; display:flex; gap:10px;">
+            <button class="btn btn-primary" onclick="saveComposto()">Salvar combinação</button>
+            <button class="btn" onclick="resetCompostoForm()">Nova combinação</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Combinações compostas cadastradas</h2>
+          <table>
+            <thead><tr><th>Sistema</th><th>Pai × Mãe</th><th>Nome</th><th></th></tr></thead>
+            <tbody id="compostos-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  // ==========================================================
+  // CONFIG — mesmos valores usados no app-umbanda.html
+  // ==========================================================
+  const SUPABASE_URL = "https://aewcxqzpbipwcdpsjfht.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_mINpOQLVbi0pilHc9bEtBA_l1a0o6c6";
+  const ADMIN_UUID   = "af619e44-1049-4ebd-86b4-4b4fa3bce94b";
+
+  // Preencher depois de criar o Worker (ver worker-audio-upload.js) —
+  // formato: https://umbanda-audio-upload.<seu-subdominio>.workers.dev
+  const AUDIO_WORKER_URL = "https://umbanda-audio-upload.micaelpsicanalise.workers.dev";
+
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  let session = null;
+  let guiasCache = [];
+  let odusCache = [];
+  let compostosCache = [];
+  let conteudosCache = [];
+  let culturasCache = [];
+  let migracoesCache = [];
+  let pendingAudioFile = null;
+  let pendingImagemFile = null;
+  let pendingRiscadoFile = null;
+
+  /* ---------------- AUTH ---------------- */
+  async function onSignIn() {
+    await supabaseClient.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.href },
+    });
+  }
+
+  async function onSignOut() {
+    await supabaseClient.auth.signOut();
+    location.reload();
+  }
+
+  async function checkSession() {
+    const { data: { session: s } } = await supabaseClient.auth.getSession();
+    if (!s) return showGate("");
+    if (s.user.id !== ADMIN_UUID) {
+      return showGate("Essa conta não tem acesso de admin.");
+    }
+    session = s;
+    document.getElementById("admin-email").textContent = s.user.email;
+    document.getElementById("view-gate").classList.remove("active");
+    document.getElementById("view-admin").classList.add("active");
+    await loadCulturas();
+    await loadMigracoes();
+    await loadGuias();
+    await loadConteudos();
+    await loadOdus();
+    await loadCompostos();
+  }
+
+  function showGate(msg) {
+    document.getElementById("gate-msg").textContent = msg;
+    document.getElementById("view-gate").classList.add("active");
+    document.getElementById("view-admin").classList.remove("active");
+  }
+
+  /* ---------------- TABS ---------------- */
+  function switchTab(name) {
+    document.getElementById("panel-guias").style.display = name === "guias" ? "block" : "none";
+    document.getElementById("panel-conteudos").style.display = name === "conteudos" ? "block" : "none";
+    document.getElementById("panel-culturas").style.display = name === "culturas" ? "block" : "none";
+    document.getElementById("panel-buzios").style.display = name === "buzios" ? "block" : "none";
+    document.getElementById("tab-guias").classList.toggle("active", name === "guias");
+    document.getElementById("tab-conteudos").classList.toggle("active", name === "conteudos");
+    document.getElementById("tab-culturas").classList.toggle("active", name === "culturas");
+    document.getElementById("tab-buzios").classList.toggle("active", name === "buzios");
+  }
+
+  /* ---------------- GUIAS ---------------- */
+  async function loadGuias() {
+    const { data, error } = await supabaseClient.from("guias").select("*").order("ordem");
+    if (error) { console.error(error); return; }
+    guiasCache = data || [];
+    renderGuiasTable();
+    renderGuiaSelect();
+  }
+
+  function renderGuiasTable() {
+    const tbody = document.getElementById("guias-table");
+    tbody.innerHTML = guiasCache.map(g => {
+      const cultura = culturasCache.find(c => c.id === g.origem_cultural_id);
+      return `
+      <tr>
+        <td>${escapeHtml(g.nome)}</td>
+        <td>${escapeHtml(g.tradicao || "umbanda")}</td>
+        <td>${g.grupo === "auxiliar" ? "Auxiliar" : "Principal"}${g.categoria ? " · " + escapeHtml(g.categoria) : ""}${cultura ? " · " + escapeHtml(cultura.nome) : ""}</td>
+        <td>${g.ordem}</td>
+        <td><span class="badge ${g.ativo ? "" : "off"}">${g.ativo ? "ativo" : "oculto"}</span></td>
+        <td><button class="btn btn-sm" onclick="editGuia('${g.id}')">Editar</button></td>
+      </tr>
+    `;
+    }).join("") || `<tr><td colspan="6" class="muted">Nenhum guia ainda.</td></tr>`;
+  }
+
+  function renderOrigemCulturalSelect() {
+    const select = document.getElementById("guia-origem-cultural");
+    select.innerHTML = `<option value="">— nenhuma —</option>` +
+      culturasCache.map(c => `<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join("");
+  }
+
+  function renderGuiaSelect() {
+    const select = document.getElementById("conteudo-guia");
+    select.innerHTML = guiasCache.map(g => `<option value="${g.id}">${escapeHtml(g.nome)}</option>`).join("");
+  }
+
+  function editGuia(id) {
+    const g = guiasCache.find(x => x.id === id);
+    if (!g) return;
+    document.getElementById("guia-id").value = g.id;
+    document.getElementById("guia-nome").value = g.nome || "";
+    document.getElementById("guia-slug").value = g.slug || "";
+    document.getElementById("guia-tradicao").value = g.tradicao || "umbanda";
+    document.getElementById("guia-grupo").value = g.grupo || "principal";
+    document.getElementById("guia-categoria").value = g.categoria || "";
+    document.getElementById("guia-origem-cultural").value = g.origem_cultural_id || "";
+    document.getElementById("guia-linha").value = g.linha || "";
+    document.getElementById("guia-descricao").value = g.descricao || "";
+    document.getElementById("guia-ordem").value = g.ordem || 0;
+    document.getElementById("guia-ativo").checked = !!g.ativo;
+    document.getElementById("guia-ponto-riscado-url").value = g.ponto_riscado_url || "";
+    document.getElementById("guia-riscado-arquivo").value = "";
+    document.getElementById("guia-riscado-upload-status").textContent = "";
+    pendingRiscadoFile = null;
+    const preview = document.getElementById("guia-riscado-preview");
+    if (g.ponto_riscado_url) { preview.src = g.ponto_riscado_url; preview.style.display = "block"; }
+    else { preview.style.display = "none"; }
+    document.getElementById("guia-form-title").textContent = "Editar guia";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resetGuiaForm() {
+    document.getElementById("guia-id").value = "";
+    document.getElementById("guia-nome").value = "";
+    document.getElementById("guia-slug").value = "";
+    document.getElementById("guia-tradicao").value = "umbanda";
+    document.getElementById("guia-grupo").value = "principal";
+    document.getElementById("guia-categoria").value = "";
+    document.getElementById("guia-origem-cultural").value = "";
+    document.getElementById("guia-linha").value = "";
+    document.getElementById("guia-descricao").value = "";
+    document.getElementById("guia-ordem").value = 0;
+    document.getElementById("guia-ativo").checked = true;
+    document.getElementById("guia-ponto-riscado-url").value = "";
+    document.getElementById("guia-riscado-arquivo").value = "";
+    document.getElementById("guia-riscado-upload-status").textContent = "";
+    document.getElementById("guia-riscado-preview").style.display = "none";
+    pendingRiscadoFile = null;
+    document.getElementById("guia-form-title").textContent = "Novo guia";
+  }
+
+  document.getElementById("guia-riscado-arquivo").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingRiscadoFile = file;
+    const preview = document.getElementById("guia-riscado-preview");
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+    document.getElementById("guia-riscado-upload-status").textContent = `Selecionado: ${file.name} — será enviado ao salvar.`;
+  });
+
+  async function saveGuia() {
+    const statusEl = document.getElementById("guia-riscado-upload-status");
+    const id = document.getElementById("guia-id").value;
+    let riscadoUrl = document.getElementById("guia-ponto-riscado-url").value || null;
+    try {
+      if (pendingRiscadoFile) {
+        statusEl.textContent = "Enviando imagem...";
+        riscadoUrl = await uploadAudio(pendingRiscadoFile);
+        statusEl.textContent = "Imagem enviada.";
+      }
+      const payload = {
+        nome: document.getElementById("guia-nome").value.trim(),
+        slug: document.getElementById("guia-slug").value.trim(),
+        tradicao: document.getElementById("guia-tradicao").value.trim().toLowerCase() || "umbanda",
+        grupo: document.getElementById("guia-grupo").value,
+        categoria: document.getElementById("guia-categoria").value.trim() || null,
+        origem_cultural_id: document.getElementById("guia-origem-cultural").value || null,
+        linha: document.getElementById("guia-linha").value.trim(),
+        descricao: document.getElementById("guia-descricao").value.trim(),
+        ordem: parseInt(document.getElementById("guia-ordem").value) || 0,
+        ativo: document.getElementById("guia-ativo").checked,
+        ponto_riscado_url: riscadoUrl,
+      };
+      if (!payload.nome || !payload.slug) {
+        alert("Nome e slug são obrigatórios.");
+        return;
+      }
+      const { error } = id
+        ? await supabaseClient.from("guias").update(payload).eq("id", id)
+        : await supabaseClient.from("guias").insert(payload);
+      if (error) throw error;
+      resetGuiaForm();
+      await loadGuias();
+    } catch (err) {
+      statusEl.textContent = "Erro: " + err.message;
+    }
+  }
+
+  /* ---------------- CONTEÚDOS ---------------- */
+  async function loadConteudos() {
+    const { data, error } = await supabaseClient.from("conteudos").select("*").order("ordem");
+    if (error) { console.error(error); return; }
+    conteudosCache = data || [];
+    renderConteudosTable();
+  }
+
+  function renderConteudosTable() {
+    const tbody = document.getElementById("conteudos-table");
+    tbody.innerHTML = conteudosCache.map(c => {
+      const guia = guiasCache.find(g => g.id === c.guia_id);
+      return `
+        <tr>
+          <td>${guia ? escapeHtml(guia.nome) : "—"}</td>
+          <td>${escapeHtml(c.titulo)}</td>
+          <td>${c.tipo}</td>
+          <td>${c.imagem_url ? `<img src="${c.imagem_url}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;">` : "—"}</td>
+          <td>${c.audio_url ? `<audio controls src="${c.audio_url}"></audio>` : `<span class="muted">sem áudio</span>`}</td>
+          <td><button class="btn btn-sm" onclick="editConteudo('${c.id}')">Editar</button></td>
+        </tr>
+      `;
+    }).join("") || `<tr><td colspan="6" class="muted">Nenhum conteúdo ainda.</td></tr>`;
+  }
+
+  function editConteudo(id) {
+    const c = conteudosCache.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById("conteudo-id").value = c.id;
+    document.getElementById("conteudo-guia").value = c.guia_id;
+    document.getElementById("conteudo-tipo").value = c.tipo;
+    document.getElementById("conteudo-odu").value = c.odu_id || "";
+    document.getElementById("conteudo-titulo").value = c.titulo || "";
+    document.getElementById("conteudo-letra").value = c.letra || "";
+    document.getElementById("conteudo-voz").value = c.voz || "";
+    document.getElementById("conteudo-ordem").value = c.ordem || 0;
+    document.getElementById("conteudo-ativo").checked = !!c.ativo;
+    document.getElementById("conteudo-audio-url").value = c.audio_url || "";
+    document.getElementById("conteudo-duracao").value = c.duracao_segundos || "";
+    document.getElementById("conteudo-arquivo").value = "";
+    pendingAudioFile = null;
+    const preview = document.getElementById("conteudo-preview");
+    if (c.audio_url) { preview.src = c.audio_url; preview.style.display = "block"; }
+    else { preview.style.display = "none"; }
+    document.getElementById("conteudo-imagem-url").value = c.imagem_url || "";
+    document.getElementById("conteudo-imagem-arquivo").value = "";
+    document.getElementById("conteudo-imagem-status").textContent = "";
+    pendingImagemFile = null;
+    const imagemPreview = document.getElementById("conteudo-imagem-preview");
+    if (c.imagem_url) { imagemPreview.src = c.imagem_url; imagemPreview.style.display = "block"; }
+    else { imagemPreview.style.display = "none"; }
+    document.getElementById("upload-status").textContent = "";
+    document.getElementById("conteudo-form-title").textContent = "Editar conteúdo";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resetConteudoForm() {
+    document.getElementById("conteudo-id").value = "";
+    document.getElementById("conteudo-odu").value = "";
+    document.getElementById("conteudo-titulo").value = "";
+    document.getElementById("conteudo-letra").value = "";
+    document.getElementById("conteudo-voz").value = "";
+    document.getElementById("conteudo-ordem").value = 0;
+    document.getElementById("conteudo-ativo").checked = true;
+    document.getElementById("conteudo-audio-url").value = "";
+    document.getElementById("conteudo-duracao").value = "";
+    document.getElementById("conteudo-arquivo").value = "";
+    document.getElementById("conteudo-preview").style.display = "none";
+    document.getElementById("upload-status").textContent = "";
+    pendingAudioFile = null;
+    document.getElementById("conteudo-imagem-url").value = "";
+    document.getElementById("conteudo-imagem-arquivo").value = "";
+    document.getElementById("conteudo-imagem-status").textContent = "";
+    document.getElementById("conteudo-imagem-preview").style.display = "none";
+    pendingImagemFile = null;
+    document.getElementById("conteudo-form-title").textContent = "Novo conteúdo";
+  }
+
+  document.getElementById("conteudo-arquivo").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingAudioFile = file;
+    const preview = document.getElementById("conteudo-preview");
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+    document.getElementById("upload-status").textContent = `Selecionado: ${file.name} — será enviado ao salvar.`;
+    document.getElementById("upload-status").classList.remove("error");
+  });
+
+  document.getElementById("conteudo-imagem-arquivo").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingImagemFile = file;
+    const preview = document.getElementById("conteudo-imagem-preview");
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+    document.getElementById("conteudo-imagem-status").textContent = `Selecionado: ${file.name} — será enviado ao salvar.`;
+  });
+
+  function getAudioDuration(file) {
+    return new Promise((resolve) => {
+      const audio = document.createElement("audio");
+      audio.preload = "metadata";
+      audio.onloadedmetadata = () => resolve(Math.round(audio.duration));
+      audio.src = URL.createObjectURL(file);
+    });
+  }
+
+  async function uploadAudio(file) {
+    if (AUDIO_WORKER_URL.includes("COLE_AQUI")) {
+      throw new Error("Configure AUDIO_WORKER_URL no topo do script antes de subir áudio.");
+    }
+    const resp = await fetch(AUDIO_WORKER_URL + "/upload", {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${session.access_token}`,
+        "Content-Type": file.type || "audio/mpeg",
+        "X-Filename": file.name,
+      },
+      body: file,
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || "Falha no upload");
+    return data.url;
+  }
+
+  async function saveConteudo() {
+    const statusEl = document.getElementById("upload-status");
+    const btn = document.getElementById("btn-salvar-conteudo");
+    const id = document.getElementById("conteudo-id").value;
+
+    let audioUrl = document.getElementById("conteudo-audio-url").value || null;
+    let duracao = document.getElementById("conteudo-duracao").value
+      ? parseInt(document.getElementById("conteudo-duracao").value) : null;
+    let imagemUrl = document.getElementById("conteudo-imagem-url").value || null;
+
+    try {
+      if (pendingAudioFile) {
+        btn.disabled = true;
+        statusEl.classList.remove("error");
+        statusEl.textContent = "Enviando áudio...";
+        duracao = await getAudioDuration(pendingAudioFile);
+        audioUrl = await uploadAudio(pendingAudioFile);
+        statusEl.textContent = "Áudio enviado.";
+      }
+      if (pendingImagemFile) {
+        document.getElementById("conteudo-imagem-status").textContent = "Enviando imagem...";
+        imagemUrl = await uploadAudio(pendingImagemFile);
+        document.getElementById("conteudo-imagem-status").textContent = "Imagem enviada.";
+      }
+
+      const payload = {
+        guia_id: document.getElementById("conteudo-guia").value,
+        tipo: document.getElementById("conteudo-tipo").value,
+        odu_id: document.getElementById("conteudo-odu").value || null,
+        titulo: document.getElementById("conteudo-titulo").value.trim(),
+        letra: document.getElementById("conteudo-letra").value.trim() || null,
+        voz: document.getElementById("conteudo-voz").value.trim() || null,
+        ordem: parseInt(document.getElementById("conteudo-ordem").value) || 0,
+        ativo: document.getElementById("conteudo-ativo").checked,
+        audio_url: audioUrl,
+        duracao_segundos: duracao,
+        imagem_url: imagemUrl,
+      };
+      if (!payload.titulo || !payload.guia_id) {
+        alert("Guia e título são obrigatórios.");
+        btn.disabled = false;
+        return;
+      }
+
+      const { error } = id
+        ? await supabaseClient.from("conteudos").update(payload).eq("id", id)
+        : await supabaseClient.from("conteudos").insert(payload);
+      if (error) throw error;
+
+      resetConteudoForm();
+      await loadConteudos();
+    } catch (err) {
+      statusEl.textContent = "Erro: " + err.message;
+      statusEl.classList.add("error");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  /* ---------------- CULTURAS ---------------- */
+  async function loadCulturas() {
+    const { data, error } = await supabaseClient.from("culturas").select("*").order("ordem");
+    if (error) { console.error(error); return; }
+    culturasCache = data || [];
+    renderCulturasTable();
+    renderOrigemCulturalSelect();
+  }
+
+  function renderCulturasTable() {
+    const tbody = document.getElementById("culturas-table");
+    tbody.innerHTML = culturasCache.map(c => `
+      <tr>
+        <td>${escapeHtml(c.nome)}</td>
+        <td>${escapeHtml(c.regiao_origem || "")}</td>
+        <td>${escapeHtml(CONTINENTE_NOME[c.continente] || c.continente || "—")}</td>
+        <td>${Array.isArray(c.marcos) ? c.marcos.length : 0}</td>
+        <td>${c.ordem}</td>
+        <td><span class="badge ${c.ativo ? "" : "off"}">${c.ativo ? "ativa" : "oculta"}</span></td>
+        <td><button class="btn btn-sm" onclick="editCultura('${c.id}')">Editar</button></td>
+      </tr>
+    `).join("") || `<tr><td colspan="7" class="muted">Nenhuma cultura ainda.</td></tr>`;
+  }
+
+  const CONTINENTE_NOME = {
+    "america-norte": "América do Norte",
+    "america-central-caribe": "América Central e Caribe",
+    "america-sul": "América do Sul",
+    "europa": "Europa",
+    "africa": "África",
+    "oriente-medio": "Oriente Médio",
+    "siberia": "Sibéria",
+    "asia": "Ásia",
+    "oceania": "Oceania",
+  };
+
+  function marcosParaTexto(marcos) {
+    if (!Array.isArray(marcos)) return "";
+    return marcos.map(m => `${m.ano || ""} | ${m.texto || ""}`).join("\n");
+  }
+
+  function textoParaMarcos(texto) {
+    return texto.split("\n")
+      .map(l => l.trim())
+      .filter(Boolean)
+      .map(l => {
+        const [ano, ...resto] = l.split("|");
+        return { ano: (ano || "").trim(), texto: resto.join("|").trim() };
+      });
+  }
+
+  function editCultura(id) {
+    const c = culturasCache.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById("cultura-id").value = c.id;
+    document.getElementById("cultura-nome").value = c.nome || "";
+    document.getElementById("cultura-slug").value = c.slug || "";
+    document.getElementById("cultura-regiao").value = c.regiao_origem || "";
+    document.getElementById("cultura-periodo").value = c.periodo || "";
+    document.getElementById("cultura-resumo").value = c.resumo || "";
+    document.getElementById("cultura-marcos").value = marcosParaTexto(c.marcos);
+    document.getElementById("cultura-continente").value = c.continente || "";
+    document.getElementById("cultura-ordem").value = c.ordem || 0;
+    document.getElementById("cultura-ativo").checked = !!c.ativo;
+    document.getElementById("cultura-form-title").textContent = "Editar cultura";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resetCulturaForm() {
+    document.getElementById("cultura-id").value = "";
+    document.getElementById("cultura-nome").value = "";
+    document.getElementById("cultura-slug").value = "";
+    document.getElementById("cultura-regiao").value = "";
+    document.getElementById("cultura-periodo").value = "";
+    document.getElementById("cultura-resumo").value = "";
+    document.getElementById("cultura-marcos").value = "";
+    document.getElementById("cultura-continente").value = "";
+    document.getElementById("cultura-ordem").value = 0;
+    document.getElementById("cultura-ativo").checked = true;
+    document.getElementById("cultura-form-title").textContent = "Nova cultura";
+  }
+
+  async function saveCultura() {
+    const id = document.getElementById("cultura-id").value;
+    const payload = {
+      nome: document.getElementById("cultura-nome").value.trim(),
+      slug: document.getElementById("cultura-slug").value.trim(),
+      regiao_origem: document.getElementById("cultura-regiao").value.trim() || null,
+      periodo: document.getElementById("cultura-periodo").value.trim() || null,
+      resumo: document.getElementById("cultura-resumo").value.trim() || null,
+      marcos: textoParaMarcos(document.getElementById("cultura-marcos").value),
+      continente: document.getElementById("cultura-continente").value || null,
+      ordem: parseInt(document.getElementById("cultura-ordem").value) || 0,
+      ativo: document.getElementById("cultura-ativo").checked,
+    };
+    if (!payload.nome || !payload.slug) {
+      alert("Nome e slug são obrigatórios.");
+      return;
+    }
+    const { error } = id
+      ? await supabaseClient.from("culturas").update(payload).eq("id", id)
+      : await supabaseClient.from("culturas").insert(payload);
+    if (error) { alert("Erro: " + error.message); return; }
+    resetCulturaForm();
+    await loadCulturas();
+    await loadGuias();
+  }
+
+  /* ---------------- MIGRAÇÕES (rotas entre continentes) ---------------- */
+  async function loadMigracoes() {
+    const { data, error } = await supabaseClient.from("culturas_migracoes").select("*").order("ordem");
+    if (error) { console.error(error); return; }
+    migracoesCache = data || [];
+    renderMigracoesTable();
+  }
+
+  function renderMigracoesTable() {
+    const tbody = document.getElementById("migracoes-table");
+    tbody.innerHTML = migracoesCache.map(m => `
+      <tr>
+        <td>${escapeHtml(m.nome)}</td>
+        <td>${escapeHtml(CONTINENTE_NOME[m.continente_origem] || m.continente_origem)}</td>
+        <td>${escapeHtml(CONTINENTE_NOME[m.continente_destino] || m.continente_destino)}</td>
+        <td>${m.ordem}</td>
+        <td><span class="badge ${m.ativo ? "" : "off"}">${m.ativo ? "ativa" : "oculta"}</span></td>
+        <td><button class="btn btn-sm" onclick="editMigracao('${m.id}')">Editar</button></td>
+      </tr>
+    `).join("") || `<tr><td colspan="6" class="muted">Nenhuma rota ainda.</td></tr>`;
+  }
+
+  function editMigracao(id) {
+    const m = migracoesCache.find(x => x.id === id);
+    if (!m) return;
+    document.getElementById("migracao-id").value = m.id;
+    document.getElementById("migracao-nome").value = m.nome || "";
+    document.getElementById("migracao-origem").value = m.continente_origem || "";
+    document.getElementById("migracao-destino").value = m.continente_destino || "";
+    document.getElementById("migracao-descricao").value = m.descricao || "";
+    document.getElementById("migracao-ordem").value = m.ordem || 0;
+    document.getElementById("migracao-ativo").checked = !!m.ativo;
+    document.getElementById("migracao-form-title").textContent = "Editar rota";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resetMigracaoForm() {
+    document.getElementById("migracao-id").value = "";
+    document.getElementById("migracao-nome").value = "";
+    document.getElementById("migracao-origem").value = "america-norte";
+    document.getElementById("migracao-destino").value = "america-norte";
+    document.getElementById("migracao-descricao").value = "";
+    document.getElementById("migracao-ordem").value = 0;
+    document.getElementById("migracao-ativo").checked = true;
+    document.getElementById("migracao-form-title").textContent = "Nova rota de migração/transmissão";
+  }
+
+  async function saveMigracao() {
+    const id = document.getElementById("migracao-id").value;
+    const payload = {
+      nome: document.getElementById("migracao-nome").value.trim(),
+      continente_origem: document.getElementById("migracao-origem").value,
+      continente_destino: document.getElementById("migracao-destino").value,
+      descricao: document.getElementById("migracao-descricao").value.trim() || null,
+      ordem: parseInt(document.getElementById("migracao-ordem").value) || 0,
+      ativo: document.getElementById("migracao-ativo").checked,
+    };
+    if (!payload.nome) {
+      alert("O nome da rota é obrigatório.");
+      return;
+    }
+    const { error } = id
+      ? await supabaseClient.from("culturas_migracoes").update(payload).eq("id", id)
+      : await supabaseClient.from("culturas_migracoes").insert(payload);
+    if (error) { alert("Erro: " + error.message); return; }
+    resetMigracaoForm();
+    await loadMigracoes();
+  }
+
+  /* ---------------- BÚZIOS: ODUS PRIMÁRIOS ---------------- */
+  async function loadOdus() {
+    const { data, error } = await supabaseClient.from("buzios_odus").select("*").order("sistema").order("abertos");
+    if (error) { console.error(error); return; }
+    odusCache = data || [];
+    renderOdusTable();
+    preencherSelectOduConteudo();
+  }
+
+  function preencherSelectOduConteudo() {
+    const select = document.getElementById("conteudo-odu");
+    if (!select) return;
+    const atual = select.value;
+    select.innerHTML = `<option value="">— nenhum —</option>` + odusCache.map(o =>
+      `<option value="${o.id}">${o.sistema} búzios · ${o.abertos} abertos — ${escapeHtml(o.nome)}</option>`
+    ).join("");
+    select.value = atual;
+  }
+
+  function renderOdusTable() {
+    document.getElementById("odus-table").innerHTML = odusCache.map(o => `
+      <tr>
+        <td>${o.sistema}</td>
+        <td>${o.abertos}</td>
+        <td>${escapeHtml(o.nome)}</td>
+        <td>${escapeHtml(o.orixa_nkisi || "—")}</td>
+        <td><button class="btn btn-sm" onclick="editOdu('${o.id}')">Editar</button></td>
+      </tr>
+    `).join("") || `<tr><td colspan="5" class="muted">Nenhum Odu cadastrado ainda.</td></tr>`;
+  }
+
+  function editOdu(id) {
+    const o = odusCache.find(x => x.id === id);
+    if (!o) return;
+    document.getElementById("odu-id").value = o.id;
+    document.getElementById("odu-sistema").value = o.sistema;
+    document.getElementById("odu-abertos").value = o.abertos;
+    document.getElementById("odu-nome").value = o.nome || "";
+    document.getElementById("odu-orixa").value = o.orixa_nkisi || "";
+    document.getElementById("odu-leitura").value = o.leitura || "";
+    document.getElementById("odu-ordem").value = o.ordem || 0;
+    document.getElementById("odu-ativo").checked = !!o.ativo;
+    document.getElementById("odu-form-title").textContent = "Editar Odu";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resetOduForm() {
+    document.getElementById("odu-id").value = "";
+    document.getElementById("odu-sistema").value = "16";
+    document.getElementById("odu-abertos").value = 0;
+    document.getElementById("odu-nome").value = "";
+    document.getElementById("odu-orixa").value = "";
+    document.getElementById("odu-leitura").value = "";
+    document.getElementById("odu-ordem").value = 0;
+    document.getElementById("odu-ativo").checked = true;
+    document.getElementById("odu-form-title").textContent = "Novo Odu";
+  }
+
+  async function saveOdu() {
+    const id = document.getElementById("odu-id").value;
+    const payload = {
+      sistema: document.getElementById("odu-sistema").value,
+      abertos: parseInt(document.getElementById("odu-abertos").value),
+      nome: document.getElementById("odu-nome").value.trim(),
+      orixa_nkisi: document.getElementById("odu-orixa").value.trim() || null,
+      leitura: document.getElementById("odu-leitura").value.trim(),
+      ordem: parseInt(document.getElementById("odu-ordem").value) || 0,
+      ativo: document.getElementById("odu-ativo").checked,
+    };
+    if (!payload.nome || !payload.leitura || isNaN(payload.abertos)) {
+      alert("Nome, quantidade de búzios abertos e leitura são obrigatórios.");
+      return;
+    }
+    const { error } = id
+      ? await supabaseClient.from("buzios_odus").update(payload).eq("id", id)
+      : await supabaseClient.from("buzios_odus").insert(payload);
+    if (error) { alert("Erro ao salvar: " + error.message); return; }
+    resetOduForm();
+    await loadOdus();
+  }
+
+  /* ---------------- BÚZIOS: COMBINAÇÕES COMPOSTAS (override) ---------------- */
+  async function loadCompostos() {
+    const { data, error } = await supabaseClient.from("buzios_odus_compostos").select("*").order("sistema");
+    if (error) { console.error(error); return; }
+    compostosCache = data || [];
+    renderCompostosTable();
+  }
+
+  function renderCompostosTable() {
+    document.getElementById("compostos-table").innerHTML = compostosCache.map(c => `
+      <tr>
+        <td>${c.sistema}</td>
+        <td>${c.abertos_pai} × ${c.abertos_mae}</td>
+        <td>${escapeHtml(c.nome || "—")}</td>
+        <td><button class="btn btn-sm" onclick="editComposto('${c.id}')">Editar</button></td>
+      </tr>
+    `).join("") || `<tr><td colspan="4" class="muted">Nenhuma combinação com texto próprio ainda.</td></tr>`;
+  }
+
+  function editComposto(id) {
+    const c = compostosCache.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById("composto-id").value = c.id;
+    document.getElementById("composto-sistema").value = c.sistema;
+    document.getElementById("composto-nome").value = c.nome || "";
+    document.getElementById("composto-abertos-pai").value = c.abertos_pai;
+    document.getElementById("composto-abertos-mae").value = c.abertos_mae;
+    document.getElementById("composto-leitura").value = c.leitura || "";
+    document.getElementById("composto-ativo").checked = !!c.ativo;
+    document.getElementById("composto-form-title").textContent = "Editar combinação composta";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resetCompostoForm() {
+    document.getElementById("composto-id").value = "";
+    document.getElementById("composto-sistema").value = "16";
+    document.getElementById("composto-nome").value = "";
+    document.getElementById("composto-abertos-pai").value = 0;
+    document.getElementById("composto-abertos-mae").value = 0;
+    document.getElementById("composto-leitura").value = "";
+    document.getElementById("composto-ativo").checked = true;
+    document.getElementById("composto-form-title").textContent = "Nova combinação composta (override)";
+  }
+
+  async function saveComposto() {
+    const id = document.getElementById("composto-id").value;
+    const payload = {
+      sistema: document.getElementById("composto-sistema").value,
+      abertos_pai: parseInt(document.getElementById("composto-abertos-pai").value),
+      abertos_mae: parseInt(document.getElementById("composto-abertos-mae").value),
+      nome: document.getElementById("composto-nome").value.trim() || null,
+      leitura: document.getElementById("composto-leitura").value.trim(),
+      ativo: document.getElementById("composto-ativo").checked,
+    };
+    if (!payload.leitura || isNaN(payload.abertos_pai) || isNaN(payload.abertos_mae)) {
+      alert("As duas quantidades de búzios abertos e a leitura são obrigatórias.");
+      return;
+    }
+    const { error } = id
+      ? await supabaseClient.from("buzios_odus_compostos").update(payload).eq("id", id)
+      : await supabaseClient.from("buzios_odus_compostos").insert(payload);
+    if (error) { alert("Erro ao salvar: " + error.message); return; }
+    resetCompostoForm();
+    await loadCompostos();
+  }
+
+  /* ---------------- HELPERS ---------------- */
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+    return div.innerHTML;
+  }
+
+  document.addEventListener("DOMContentLoaded", checkSession);
+</script>
+</body>
+</html>

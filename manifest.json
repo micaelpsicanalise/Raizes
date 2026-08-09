@@ -1,0 +1,16 @@
+{
+  "name": "Raízes — Tradições e Povos Originários",
+  "short_name": "Raízes",
+  "description": "Guias, pontos cantados, orações e a história dos povos originários.",
+  "start_url": "app/",
+  "display": "standalone",
+  "background_color": "#5C3620",
+  "theme_color": "#5C3620",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
