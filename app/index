@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Raízes — protótipo</title>
+
+<!-- PWA: permite "Adicionar à tela inicial" no celular -->
+<link rel="manifest" href="../manifest.json">
+<meta name="theme-color" content="#5C3620">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Raízes">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<link rel="icon" href="../icons/icon-192.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2.111.0"></script>
+<script>
+  // Chave publicável — segura de deixar no código, é protegida por RLS,
+  // não é a service_role (mesmo padrão usado no Caos Astral e no site
+  // de tatuagem: ver CLAUDE.md).
+  const SUPABASE_URL = "https://aewcxqzpbipwcdpsjfht.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_mINpOQLVbi0pilHc9bEtBA_l1a0o6c6";
+</script>
+<style>
+  :root{
+    --bg: #F6F2E9;
+    --ink: #2B2118;
+    --ink-soft: #6B5D4F;
+    --terra: #A15C32;
+    --terra-dark: #5C3620;
+    --gold: #B98A2C;
+    --gold-soft: #EADFC4;
+    --line: rgba(30,42,32,0.14);
+    --card: #FFFFFF;
+    --radius: 18px;
+    --content-width: 1040px;
+  }
+  *{box-sizing:border-box;}
+  html{ background: var(--bg); }
+  body{
+    margin:0;
+    background: var(--bg);
+    font-family:'Inter', sans-serif;
+    color: var(--ink);
+    min-height:100vh;
+    min-height:100dvh;
+  }
+  a{ color:inherit; }
+
+  /* ---------------- NAV (topo, sempre visível, site normal) ---------------- */
+  .site-nav{
+    display:flex; align-items:center; justify-content:space-between;
+    max-width: var(--content-width); margin:0 auto;
+    padding:20px 24px;
+    border-bottom:1px solid var(--line);
+  }
+  .site-nav.hidden{ display:none; }
+  .brand{
+    font-family:'Fraunces', serif; font-size:19px; font-weight:500; color:var(--ink);
+    display:flex; align-items:center; gap:8px;
+  }
+  .brand .mark{ width:9px; height:9px; border-radius:50%; background:var(--gold); display:inline-block; }
+  .nav-links{ display:flex; gap:28px; align-items:center; }
+  .nav-link{
+    background:none; border:none; font-family:'Inter', sans-serif; font-size:13.5px;
+    color:var(--ink-soft); cursor:pointer; padding:4px 0; position:relative;
+  }
+  .nav-link.active{ color:var(--ink); font-weight:600; }
+  .nav-link.active::after{
+    content:""; position:absolute; left:0; right:0; bottom:-6px; height:2px; background:var(--gold);
+  }
+
+  /* ---------------- MAIN ---------------- */
+  .site-main{ max-width: var(--content-width); margin:0 auto; padding:0 24px 80px; }
+  .view{ display:none; flex-direction:column; padding-top:36px; }
+  .view.active{ display:flex; }
+
+  h1,h2,h3{ font-family:'Fraunces', serif; font-weight:500; margin:0; color:var(--ink); }
+  p{ margin:0; }
+  .eyebrow{
+    font-size:11px; letter-spacing:0.06em; text-transform:uppercase;
+    color: var(--ink-soft); font-weight:500;
+  }
+
+  .top-row{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px; gap:16px; }
+  .greeting{ font-size:22px; font-family:'Fraunces', serif; }
+  .icon-btn{
+    width:36px; height:36px; border-radius:50%; background:var(--card);
+    border:1px solid var(--line); display:flex; align-items:center; justify-content:center;
+    color:var(--ink-soft); font-size:15px; cursor:pointer; flex-shrink:0;
+  }
+
+  /* ---------------- HOME hero ---------------- */
+  .home-hero{ display:flex; gap:16px; align-items:stretch; margin-bottom:32px; flex-wrap:wrap; }
+  .guia-card{
+    background: var(--terra); color:#fff; border-radius: var(--radius);
+    padding:28px; position:relative; overflow:hidden; flex:2 1 320px;
+  }
+  .guia-card .eyebrow{ color: var(--gold-soft); }
+  .guia-card h2{ color:#fff; font-size:30px; margin-top:8px; }
+  .guia-card .sub{ font-size:13px; color:#E4D6C5; margin-top:6px; }
+  .ring{
+    position:absolute; right:-30px; top:-30px; width:120px; height:120px;
+    border-radius:50%; border:1px solid rgba(255,255,255,0.18);
+  }
+  .ring.small{ right:-10px; top:-10px; width:70px; height:70px; }
+
+  .stat-row{ display:flex; flex-direction:column; gap:10px; flex:1 1 160px; }
+  .stat{
+    flex:1; background:var(--card); border:1px solid var(--line);
+    border-radius:14px; padding:16px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .stat .num{ font-family:'Fraunces', serif; font-size:26px; }
+  .stat .label{ font-size:11.5px; color:var(--ink-soft); text-align:right; }
+
+  .section-label{ font-size:12.5px; color:var(--ink-soft); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.04em; }
+
+  /* ---------------- Listas em grade — nada de coluna única forçada ---------------- */
+  .list-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px; }
+  .list-item{
+    display:flex; align-items:center; gap:12px; background:var(--card);
+    border:1px solid var(--line); border-radius:14px; padding:14px 16px;
+    cursor:pointer; transition:border-color .15s ease;
+  }
+  .list-item:hover{ border-color:var(--terra); }
+  .list-item .dot{
+    width:38px; height:38px; border-radius:50%; background: var(--gold-soft);
+    flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    color: var(--gold); font-size:14px; font-family:'Fraunces', serif; overflow:hidden;
+  }
+  .list-item .meta{ flex:1; min-width:0; }
+  .list-item .title{ font-size:14px; font-weight:500; }
+  .list-item .sub{ font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+  .list-item .chev{ color:var(--ink-soft); font-size:14px; flex-shrink:0; }
+
+  .filters{ display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .filter{
+    font-size:12px; padding:7px 14px; border-radius:20px; white-space:nowrap;
+    border:1px solid var(--line); color:var(--ink-soft); cursor:pointer;
+  }
+  .filter.active{ background:var(--terra); border-color:var(--terra); color:#fff; }
+
+  .back-row{ display:flex; align-items:center; gap:6px; margin-bottom:20px; color:var(--ink-soft); font-size:13px; cursor:pointer; }
+  .back-row:hover{ color:var(--ink); }
+
+  /* ---------------- Player — bloco focado, mas dentro da página normal ---------------- */
+  .player-panel{ max-width:440px; }
+  .art{
+    width:140px; height:140px; border-radius:20px; background:var(--terra);
+    margin-bottom:20px; position:relative; overflow:hidden;
+  }
+  .art .ring{ border-color: rgba(255,255,255,0.25); }
+
+  .track-title{ font-size:19px; }
+  .track-sub{ font-size:13px; color:var(--ink-soft); margin-top:4px; margin-bottom:26px; }
+
+  .waveform{ display:flex; align-items:flex-end; gap:3px; height:40px; margin-bottom:8px; }
+  .bar{ flex:1; background:var(--line); border-radius:2px; }
+  .bar.played{ background:var(--gold); }
+
+  .time-row{ display:flex; justify-content:space-between; font-size:11px; color:var(--ink-soft); margin-bottom:24px; }
+
+  .controls{ display:flex; align-items:center; gap:26px; margin-bottom:24px; }
+  .controls .side{ color:var(--ink-soft); font-size:19px; cursor:pointer; }
+  .play-btn{
+    width:54px; height:54px; border-radius:50%; background:var(--terra);
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:19px; cursor:pointer; border:none;
+  }
+
+  .lyric-toggle{
+    display:flex; justify-content:space-between; align-items:center;
+    border-top:1px solid var(--line); padding:14px 0; font-size:13px; color:var(--ink-soft);
+    cursor:pointer;
+  }
+
+  /* ---------------- Login ---------------- */
+  .login-view{ align-items:flex-start; padding-top:14vh; }
+  .login-view .login-box{ max-width:380px; }
+  .login-view h1{ font-size:32px; margin-top:8px; }
+  .login-view p.desc{ font-size:14px; color:var(--ink-soft); line-height:1.55; margin-top:10px; }
+  .google-btn{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    background:#fff; border:1px solid var(--line); border-radius:14px;
+    padding:14px 20px; font-family:'Inter',sans-serif; font-size:14px; font-weight:600;
+    color:var(--ink); cursor:pointer; width:100%; margin-top:26px;
+  }
+  .login-note{ font-size:11.5px; color:var(--ink-soft); margin-top:14px; }
+
+  /* ---------------- Perfil ---------------- */
+  .profile-header{ display:flex; align-items:center; gap:16px; margin-bottom:28px; }
+  .avatar-circle{
+    width:60px; height:60px; border-radius:50%; background:var(--gold-soft);
+    color:var(--gold); font-family:'Fraunces',serif; font-size:22px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .profile-name{ font-size:18px; }
+  .profile-email{ font-size:12.5px; color:var(--ink-soft); margin-top:2px; }
+  .signout-btn{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:13px; text-align:center; font-size:13.5px; color:var(--ink); cursor:pointer;
+    margin-top:16px; max-width:200px;
+  }
+  .signout-btn:hover{ border-color:var(--terra); }
+
+  .empty-note{ font-size:13px; color:var(--ink-soft); padding:14px 0; }
+  .letra-box{ font-size:13px; line-height:1.65; color:var(--ink-soft); padding:6px 0 14px; display:none; max-width:640px; }
+  .letra-box.open{ display:block; }
+
+  .historia-resumo{ font-size:14px; color:var(--ink-soft); line-height:1.65; margin-bottom:24px; max-width:640px; }
+  .historia-tag{
+    display:inline-block; font-size:11px; color:var(--gold); background:var(--gold-soft);
+    padding:4px 11px; border-radius:20px; margin-bottom:16px; font-weight:600;
+  }
+  .timeline{ position:relative; padding-left:20px; margin-bottom:30px; max-width:640px; }
+  .timeline::before{
+    content:""; position:absolute; left:4px; top:4px; bottom:4px; width:1px; background:var(--line);
+  }
+  .timeline-item{ position:relative; padding-bottom:18px; }
+  .timeline-item::before{
+    content:""; position:absolute; left:-20px; top:3px; width:9px; height:9px; border-radius:50%;
+    background:var(--terra); border:2px solid var(--bg);
+  }
+  .timeline-year{ font-size:11.5px; color:var(--gold); font-weight:600; margin-bottom:3px; }
+  .timeline-text{ font-size:13.5px; line-height:1.55; }
+
+  @media (max-width:640px){
+    .site-nav{ padding:16px; }
+    .nav-links{ gap:18px; }
+    .site-main{ padding:0 16px 60px; }
+    .view{ padding-top:24px; }
+    .home-hero{ flex-direction:column; }
+    .stat-row{ flex-direction:row; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="site-nav hidden" id="site-nav">
+  <div class="brand"><span class="mark"></span>Raízes</div>
+  <div class="nav-links">
+    <a href="../index.html" class="nav-link" style="text-decoration:none;">‹ Site</a>
+    <button class="nav-link active" data-view="home" onclick="showView('home')">Início</button>
+    <button class="nav-link" data-view="biblioteca" onclick="showView('biblioteca')">Guias</button>
+    <button class="nav-link" data-view="historia" onclick="showView('historia')">História</button>
+    <button class="nav-link" data-view="perfil" onclick="showView('perfil')">Perfil</button>
+  </div>
+</nav>
+
+<main class="site-main">
+
+    <!-- ================= LOGIN ================= -->
+    <section id="view-login" class="view login-view active">
+      <div class="login-box">
+        <p class="eyebrow">Tradições e raízes</p>
+        <h1>Raízes</h1>
+        <p class="desc">Guias, pontos cantados, orações — e a história dos povos que vieram antes.</p>
+        <button class="google-btn" onclick="onSignInWithGoogle()">
+          <span>Continuar com Google</span>
+        </button>
+        <p class="login-note" id="login-error"></p>
+      </div>
+    </section>
+
+    <!-- ================= HOME ================= -->
+    <section id="view-home" class="view">
+      <div class="top-row">
+        <span class="greeting">Boa tarde, <span id="user-name">Marcos</span></span>
+        <div class="icon-btn" onclick="onOpenNotifications()">•</div>
+      </div>
+
+      <div class="home-hero">
+        <div class="guia-card">
+          <div class="ring"></div>
+          <div class="ring small"></div>
+          <p class="eyebrow" id="guia-do-dia-label">Guia do dia</p>
+          <h2 id="guia-do-dia-nome">Ogum</h2>
+          <p class="sub" id="guia-do-dia-info">Terça-feira · linha de guerreiro</p>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat">
+            <p class="num" id="stat-streak">12</p>
+            <p class="label">dias<br>seguidos</p>
+          </div>
+          <div class="stat">
+            <p class="num" id="stat-ouvidos">6</p>
+            <p class="label">pontos<br>ouvidos</p>
+          </div>
+        </div>
+      </div>
+
+      <p class="section-label">Sugestão de hoje</p>
+      <div id="home-suggestions" class="list-grid">
+        <!-- Conteúdo abaixo é só placeholder visual — renderHomeSuggestions()
+             substitui isso assim que os dados reais chegam do Supabase -->
+        <div class="list-item" onclick="onOpenTrack('saudacao-ogum')">
+          <div class="dot">▶</div>
+          <div class="meta">
+            <p class="title">Saudação a Ogum</p>
+            <p class="sub">3 min · áudio</p>
+          </div>
+          <span class="chev">›</span>
+        </div>
+        <div class="list-item" onclick="onOpenTrack('abertura-gira')">
+          <div class="dot">≡</div>
+          <div class="meta">
+            <p class="title">Oração de abertura de gira</p>
+            <p class="sub">Leitura</p>
+          </div>
+          <span class="chev">›</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= BIBLIOTECA ================= -->
+    <section id="view-biblioteca" class="view">
+      <div class="top-row">
+        <h3>Guias e orixás</h3>
+        <div class="icon-btn" onclick="onOpenSearch()">⌕</div>
+      </div>
+
+      <div class="filters" id="tradicao-filters" style="margin-bottom:8px;">
+        <!-- setBibliotecaTradicao() troca a tradição ativa e re-renderiza tudo -->
+      </div>
+
+      <div class="filters" id="biblioteca-filters">
+        <!-- setBibliotecaCategoria() re-renderiza #biblioteca-list a partir de appState.guias/conteudos -->
+        <div class="filter active" data-cat="orixas" onclick="setBibliotecaCategoria('orixas', this)">Orixás</div>
+        <div class="filter" data-cat="entidades" onclick="setBibliotecaCategoria('entidades', this)">Entidades</div>
+        <div class="filter" data-cat="pontos" onclick="setBibliotecaCategoria('pontos', this)">Pontos Cantados</div>
+        <div class="filter" data-cat="riscados" onclick="setBibliotecaCategoria('riscados', this)">Pontos Riscados</div>
+        <div class="filter" data-cat="itans" onclick="setBibliotecaCategoria('itans', this)">Itans</div>
+      </div>
+
+      <div id="biblioteca-list" class="list-grid">
+        <!-- Placeholder visual — renderBibliotecaList() substitui isso assim
+             que appState.guias é carregado do Supabase -->
+        <div class="list-item" onclick="onOpenGuia('ogum')">
+          <div class="dot">O</div>
+          <div class="meta"><p class="title">Ogum</p><p class="sub">4 pontos · 2 orações</p></div>
+          <span class="chev">›</span>
+        </div>
+        <div class="list-item" onclick="onOpenGuia('oxum')">
+          <div class="dot">O</div>
+          <div class="meta"><p class="title">Oxum</p><p class="sub">5 pontos · 3 orações</p></div>
+          <span class="chev">›</span>
+        </div>
+        <div class="list-item" onclick="onOpenGuia('vovo-cambinda')">
+          <div class="dot">V</div>
+          <div class="meta"><p class="title">Vovó Cambinda</p><p class="sub">3 pontos · 1 oração</p></div>
+          <span class="chev">›</span>
+        </div>
+        <div class="list-item" onclick="onOpenGuia('iemanja')">
+          <div class="dot">I</div>
+          <div class="meta"><p class="title">Iemanjá</p><p class="sub">6 pontos · 2 orações</p></div>
+          <span class="chev">›</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= HISTÓRIA (povos originários) ================= -->
+    <section id="view-historia" class="view">
+      <div class="top-row">
+        <h3>Povos originários</h3>
+        <div class="filters" style="margin:0;">
+          <div class="filter active" id="historia-modo-lista" onclick="setHistoriaModo('lista')">Lista</div>
+          <div class="filter" id="historia-modo-mapa" onclick="setHistoriaModo('mapa')">Mapa</div>
+        </div>
+      </div>
+      <p class="section-label" id="historia-subtitulo">Culturas e nações que formam as tradições do app</p>
+
+      <div id="historia-list-wrap">
+        <div class="filters" id="historia-continente-filters"></div>
+        <div id="historia-list" class="list-grid">
+          <!-- renderHistoriaList() gera a partir de appState.culturas -->
+        </div>
+      </div>
+
+      <div id="historia-mapa-wrap" style="display:none;">
+        <div id="historia-mapa"></div>
+        <p class="historia-resumo" style="margin-top:12px;">Tracejado = rotas históricas de migração e transmissão cultural. Toque numa região pra ver as culturas cadastradas nela.</p>
+      </div>
+    </section>
+
+    <!-- ================= DETALHE DE UMA CULTURA ================= -->
+    <section id="view-cultura-detalhe" class="view">
+      <div class="back-row" onclick="showView('historia')">‹ Voltar</div>
+      <p class="historia-tag" id="cultura-regiao">—</p>
+      <h3 id="cultura-nome" style="margin-bottom:14px;">—</h3>
+      <p class="historia-resumo" id="cultura-resumo">—</p>
+      <p class="section-label">Linha do tempo</p>
+      <div class="timeline" id="cultura-timeline"></div>
+      <p class="section-label">Guias ligados a esta tradição</p>
+      <div id="cultura-guias-relacionados" class="list-grid"></div>
+    </section>
+
+    <!-- ================= PLAYER ================= -->
+    <section id="view-player" class="view">
+      <div class="back-row" onclick="showView('biblioteca')">‹ Voltar</div>
+
+      <div class="player-panel">
+      <div class="art" id="player-art"><div class="ring"></div></div>
+      <h3 class="track-title" id="player-title">Ponto cantado de Ogum</h3>
+      <p class="track-sub" id="player-sub">Voz: Marcos e Ana</p>
+
+      <div id="player-audio-section">
+        <div class="waveform" id="player-waveform">
+          <!-- TODO: gerar barras a partir da forma de onda real do áudio -->
+          <div class="bar played" style="height:20%"></div>
+          <div class="bar played" style="height:55%"></div>
+          <div class="bar played" style="height:35%"></div>
+          <div class="bar played" style="height:70%"></div>
+          <div class="bar" style="height:25%"></div>
+          <div class="bar" style="height:45%"></div>
+          <div class="bar" style="height:30%"></div>
+          <div class="bar" style="height:60%"></div>
+          <div class="bar" style="height:20%"></div>
+          <div class="bar" style="height:50%"></div>
+        </div>
+        <div class="time-row">
+          <span id="player-time-current">1:12</span>
+          <span id="player-time-total">3:00</span>
+        </div>
+
+        <div class="controls">
+          <span class="side" onclick="onSkip(-1)">‹‹</span>
+          <button class="play-btn" id="play-pause-btn" onclick="onTogglePlay()">❚❚</button>
+          <span class="side" onclick="onSkip(1)">››</span>
+        </div>
+      </div>
+
+      <div class="lyric-toggle" id="lyric-toggle-row" onclick="onToggleLyrics()">
+        <span id="lyric-toggle-label">Letra do ponto</span><span id="lyric-chevron">⌄</span>
+      </div>
+      <div class="letra-box" id="letra-box"></div>
+
+      <!-- Elemento de áudio real, sem src ainda -->
+      <audio id="audio-player" preload="none"></audio>
+      </div>
+    </section>
+
+    <!-- ================= PERFIL ================= -->
+    <section id="view-perfil" class="view">
+      <div class="top-row">
+        <h3>Perfil</h3>
+      </div>
+      <div class="profile-header">
+        <div class="avatar-circle" id="perfil-inicial">?</div>
+        <div>
+          <p class="profile-name" id="perfil-nome">—</p>
+          <p class="profile-email" id="perfil-email">—</p>
+        </div>
+      </div>
+      <div class="stat-row" style="flex-direction:row; max-width:360px; margin-bottom:20px;">
+        <div class="stat">
+          <p class="num" id="perfil-streak">0</p>
+          <p class="label">dias<br>seguidos</p>
+        </div>
+        <div class="stat">
+          <p class="num" id="perfil-ouvidos">0</p>
+          <p class="label">pontos<br>ouvidos</p>
+        </div>
+      </div>
+      <div class="signout-btn" onclick="onSignOut()">Sair da conta</div>
+    </section>
+
+</main>
+
+<script>
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const DIAS_SEMANA = ["Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"];
+
+  /* ==========================================================
+     ESTADO
+     ========================================================== */
+  const appState = {
+    user: null,               // sessão do Supabase Auth
+    guias: [],                // todos os guias, carregados uma vez
+    conteudos: [],             // todos os conteúdos, carregados uma vez
+    culturas: [],               // culturas afro-diaspóricas (tabela "culturas")
+    migracoes: [],               // rotas de migração/transmissão entre continentes
+    culturaAberta: null,        // slug da cultura em detalhe, ou null
+    historiaModo: "lista",        // lista | mapa
+    historiaContinente: "todos",  // filtro de continente na lista
+    bibliotecaTradicao: "umbanda", // tradição ativa — ajustada pra primeira que existir, ao carregar
+    bibliotecaCategoria: "orixas", // orixas | entidades | pontos | riscados | itans
+    bibliotecaGuiaAberto: null, // slug do guia em detalhe, ou null pra lista geral
+    bibliotecaRiscadoAberto: null, // slug do guia com o ponto riscado em detalhe
+    isPlaying: false,
+    currentTrackId: null,
+  };
+
+  // Rótulos amigáveis por tradição — cai num padrão genérico quando a
+  // tradição não está na lista (assim novas tradições já funcionam
+  // sem precisar mexer no código, só ficam com nome genérico até
+  // alguém vir aqui e dar um nome mais preciso).
+  const TRADICAO_NOME = { umbanda: "Umbanda", candomble: "Candomblé", vodum: "Vodum", santeria: "Santería", jurema: "Jurema Sagrada", quimbanda: "Quimbanda" };
+  const TRADICAO_LABELS = {
+    umbanda: { principal: "Orixás", auxiliar: "Entidades" },
+    candomble: { principal: "Orixás", auxiliar: "Entidades" },
+    vodum: { principal: "Lwa", auxiliar: "Outras entidades" },
+    santeria: { principal: "Orishas", auxiliar: "Otras entidades" },
+  };
+  function labelGrupo(tradicao, grupo) {
+    const labels = TRADICAO_LABELS[tradicao] || { principal: "Guias principais", auxiliar: "Outras entidades" };
+    return labels[grupo] || labels.principal;
+  }
+
+  /* ==========================================================
+     NAVEGAÇÃO ENTRE TELAS
+     ========================================================== */
+  function showView(name) {
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    document.getElementById("view-" + name).classList.add("active");
+    const navLink = document.querySelector('.nav-link[data-view="' + name + '"]');
+    if (navLink) {
+      document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+      navLink.classList.add("active");
+    }
+    document.getElementById("site-nav").classList.toggle("hidden", name === "login");
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  /* ==========================================================
+     AUTENTICAÇÃO
+     ========================================================== */
+  async function onSignInWithGoogle() {
+    const errorEl = document.getElementById("login-error");
+    errorEl.textContent = "";
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.href },
+    });
+    if (error) errorEl.textContent = "Não deu pra entrar agora — tenta de novo em instantes.";
+  }
+
+  async function onSignOut() {
+    await supabaseClient.auth.signOut();
+    appState.user = null;
+    showView("login");
+  }
+
+  async function checkSession() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+      appState.user = session.user;
+      await onAuthReady();
+    } else {
+      showView("login");
+    }
+    // Mantém a UI em sincronia caso o login termine em outra aba/redirect
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        appState.user = session.user;
+        await onAuthReady();
+      } else if (event === "SIGNED_OUT") {
+        appState.user = null;
+        showView("login");
+      }
+    });
+  }
+
+  async function onAuthReady() {
+    await Promise.all([loadCatalogo(), loadHomeData(), loadPerfilData()]);
+    renderTradicaoChips();
+    atualizarLabelsAbas();
+    renderBibliotecaList();
+    renderHistoriaList();
+    showView("home");
+  }
+
+  /* ==========================================================
+     CATÁLOGO (guias + conteúdos + culturas) — carregado uma vez,
+     é dado público, não muda por usuário.
+     ========================================================== */
+  async function loadCatalogo() {
+    const [{ data: guias, error: errGuias }, { data: conteudos, error: errConteudos }, { data: culturas, error: errCulturas }, { data: migracoes, error: errMigracoes }] = await Promise.all([
+      supabaseClient.from("guias").select("*").eq("ativo", true).order("ordem"),
+      supabaseClient.from("conteudos").select("*").eq("ativo", true).order("ordem"),
+      supabaseClient.from("culturas").select("*").eq("ativo", true).order("ordem"),
+      supabaseClient.from("culturas_migracoes").select("*").eq("ativo", true).order("ordem"),
+    ]);
+    if (errGuias) console.error("Erro ao carregar guias:", errGuias);
+    if (errConteudos) console.error("Erro ao carregar conteúdos:", errConteudos);
+    if (errCulturas) console.error("Erro ao carregar culturas:", errCulturas);
+    if (errMigracoes) console.error("Erro ao carregar migrações:", errMigracoes);
+    appState.guias = guias || [];
+    appState.conteudos = conteudos || [];
+    appState.culturas = culturas || [];
+    appState.migracoes = migracoes || [];
+  }
+
+  /* ==========================================================
+     HISTÓRIA — raízes afro-diaspóricas
+     ========================================================== */
+  const CONTINENTE_NOME = {
+    "america-norte": "América do Norte",
+    "america-central-caribe": "América Central e Caribe",
+    "america-sul": "América do Sul",
+    "europa": "Europa",
+    "africa": "África",
+    "oriente-medio": "Oriente Médio",
+    "siberia": "Sibéria",
+    "asia": "Ásia",
+    "oceania": "Oceania",
+  };
+
+  // posições fixas das 9 regiões no mapa esquemático (viewBox 680x460)
+  const MAPA_ZONAS = {
+    "america-norte":          { nome: "América do Norte",          x: 40,  y: 60,  w: 150, h: 110 },
+    "america-central-caribe": { nome: "América Central e Caribe",  x: 40,  y: 190, w: 150, h: 100 },
+    "america-sul":            { nome: "América do Sul",            x: 40,  y: 310, w: 150, h: 110 },
+    "europa":                 { nome: "Europa",                    x: 270, y: 60,  w: 150, h: 110 },
+    "africa":                 { nome: "África",                    x: 270, y: 190, w: 150, h: 130 },
+    "oriente-medio":          { nome: "Oriente Médio",             x: 270, y: 340, w: 150, h: 80  },
+    "siberia":                { nome: "Sibéria",                   x: 470, y: 60,  w: 150, h: 100 },
+    "asia":                   { nome: "Ásia",                      x: 470, y: 180, w: 150, h: 110 },
+    "oceania":                { nome: "Oceania",                   x: 470, y: 310, w: 150, h: 100 },
+  };
+
+  function setHistoriaModo(modo) {
+    appState.historiaModo = modo;
+    document.getElementById("historia-modo-lista").classList.toggle("active", modo === "lista");
+    document.getElementById("historia-modo-mapa").classList.toggle("active", modo === "mapa");
+    document.getElementById("historia-list-wrap").style.display = modo === "lista" ? "block" : "none";
+    document.getElementById("historia-mapa-wrap").style.display = modo === "mapa" ? "block" : "none";
+    if (modo === "mapa") renderMapaMundial();
+  }
+
+  function setHistoriaContinente(continente) {
+    appState.historiaContinente = continente;
+    document.querySelectorAll("#historia-continente-filters .filter").forEach(f => {
+      f.classList.toggle("active", f.dataset.cont === continente);
+    });
+    renderHistoriaList();
+  }
+
+  function renderHistoriaContinenteFilters() {
+    const presentes = [...new Set(appState.culturas.map(c => c.continente).filter(Boolean))];
+    const container = document.getElementById("historia-continente-filters");
+    const chips = [`<div class="filter${appState.historiaContinente === "todos" ? " active" : ""}" data-cont="todos" onclick="setHistoriaContinente('todos')">Todos</div>`]
+      .concat(presentes.map(cont => `<div class="filter${appState.historiaContinente === cont ? " active" : ""}" data-cont="${cont}" onclick="setHistoriaContinente('${cont}')">${CONTINENTE_NOME[cont] || cont}</div>`));
+    container.innerHTML = chips.join("");
+  }
+
+  function renderHistoriaList() {
+    renderHistoriaContinenteFilters();
+    const container = document.getElementById("historia-list");
+    const culturas = appState.historiaContinente === "todos"
+      ? appState.culturas
+      : appState.culturas.filter(c => c.continente === appState.historiaContinente);
+    if (!culturas.length) {
+      container.innerHTML = `<p class="empty-note">Nenhuma cultura cadastrada ainda.</p>`;
+      return;
+    }
+    container.innerHTML = culturas.map(c => `
+      <div class="list-item" onclick="onOpenCultura('${c.slug}')">
+        <div class="dot">${escapeHtml(c.nome.charAt(0))}</div>
+        <div class="meta">
+          <p class="title">${escapeHtml(c.nome)}</p>
+          <p class="sub">${escapeHtml(c.regiao_origem || "")}</p>
+        </div>
+        <span class="chev">›</span>
+      </div>`).join("");
+  }
+
+  function renderMapaMundial() {
+    const container = document.getElementById("historia-mapa");
+    const boxesHtml = Object.entries(MAPA_ZONAS).map(([cont, zona]) => {
+      const count = appState.culturas.filter(c => c.continente === cont).length;
+      const cx = zona.x + zona.w / 2;
+      return `
+        <g class="node" onclick="onAbrirZonaMapa('${cont}')" style="cursor:pointer;">
+          <rect x="${zona.x}" y="${zona.y}" width="${zona.w}" height="${zona.h}" rx="10"
+                fill="var(--card)" stroke="var(--line)" stroke-width="1" stroke-dasharray="4 3"/>
+          <text x="${zona.x + 12}" y="${zona.y + 24}" font-family="Fraunces, serif" font-size="14" fill="var(--ink)">${escapeHtml(zona.nome)}</text>
+          <text x="${zona.x + 12}" y="${zona.y + 44}" font-family="Inter, sans-serif" font-size="11.5" fill="var(--ink-soft)">${count} cultura${count === 1 ? "" : "s"} cadastrada${count === 1 ? "" : "s"}</text>
+        </g>`;
+    }).join("");
+
+    const arrowsHtml = appState.migracoes.map(m => {
+      const de = MAPA_ZONAS[m.continente_origem];
+      const para = MAPA_ZONAS[m.continente_destino];
+      if (!de || !para) return "";
+      const x1 = de.x + de.w / 2, y1 = de.y + de.h / 2;
+      const x2 = para.x + para.w / 2, y2 = para.y + para.h / 2;
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2 - 40;
+      return `<path d="M${x1},${y1} Q${mx},${my} ${x2},${y2}" fill="none" stroke="var(--gold)" stroke-width="1.2" stroke-dasharray="4 3" opacity="0.6" marker-end="url(#seta-migracao)"/>`;
+    }).join("");
+
+    container.innerHTML = `
+      <svg width="100%" viewBox="0 0 680 460" role="img" style="overflow:visible;">
+        <title>Mapa de povos originários</title>
+        <defs>
+          <marker id="seta-migracao" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+        ${arrowsHtml}
+        ${boxesHtml}
+      </svg>`;
+  }
+
+  function onAbrirZonaMapa(continente) {
+    setHistoriaModo("lista");
+    setHistoriaContinente(continente);
+  }
+
+  function onOpenCultura(slug) {
+    appState.culturaAberta = slug;
+    renderCulturaDetalhe(slug);
+    showView("cultura-detalhe");
+  }
+
+  function renderCulturaDetalhe(slug) {
+    const cultura = appState.culturas.find(c => c.slug === slug);
+    if (!cultura) return;
+
+    document.getElementById("cultura-regiao").textContent = cultura.regiao_origem || "";
+    document.getElementById("cultura-nome").textContent = cultura.nome;
+    document.getElementById("cultura-resumo").textContent = cultura.resumo || "";
+
+    const marcos = Array.isArray(cultura.marcos) ? cultura.marcos : [];
+    document.getElementById("cultura-timeline").innerHTML = marcos.map(m => `
+      <div class="timeline-item">
+        <p class="timeline-year">${escapeHtml(m.ano || "")}</p>
+        <p class="timeline-text">${escapeHtml(m.texto || "")}</p>
+      </div>`).join("") || `<p class="empty-note">Sem marcos cadastrados ainda.</p>`;
+
+    const guiasRelacionados = appState.guias.filter(g => g.origem_cultural_id === cultura.id);
+    const guiasContainer = document.getElementById("cultura-guias-relacionados");
+    guiasContainer.innerHTML = guiasRelacionados.length
+      ? guiasRelacionados.map(g => `
+        <div class="list-item" onclick="onOpenGuia('${g.slug}')">
+          <div class="dot">${escapeHtml(g.nome.charAt(0))}</div>
+          <div class="meta"><p class="title">${escapeHtml(g.nome)}</p><p class="sub">${TRADICAO_NOME[g.tradicao] || g.tradicao}</p></div>
+          <span class="chev">›</span>
+        </div>`).join("")
+      : `<p class="empty-note">Nenhum guia catalogado ainda para esta tradição.</p>`;
+  }
+
+  /* ==========================================================
+     HOME
+     ========================================================== */
+  async function loadHomeData() {
+    const nome = (appState.user.user_metadata && appState.user.user_metadata.full_name)
+      ? appState.user.user_metadata.full_name.split(" ")[0]
+      : appState.user.email;
+    document.getElementById("user-name").textContent = nome;
+
+    const { data: guiaDoDia, error: errGuiaDoDia } = await supabaseClient
+      .from("guia_do_dia_hoje").select("*").maybeSingle();
+    if (errGuiaDoDia) console.error("Erro ao carregar guia do dia:", errGuiaDoDia);
+    if (guiaDoDia) {
+      const diaLabel = DIAS_SEMANA[new Date().getDay()];
+      document.getElementById("guia-do-dia-nome").textContent = guiaDoDia.nome;
+      document.getElementById("guia-do-dia-info").textContent =
+        diaLabel + (guiaDoDia.linha ? " · " + guiaDoDia.linha : "");
+    } else {
+      document.getElementById("guia-do-dia-nome").textContent = "—";
+      document.getElementById("guia-do-dia-info").textContent = "Nenhum guia definido pra hoje ainda";
+    }
+
+    const { data: streak } = await supabaseClient.rpc("get_streak", { p_user_id: appState.user.id });
+    const { data: ouvidos } = await supabaseClient.rpc("get_total_ouvidos", { p_user_id: appState.user.id });
+    document.getElementById("stat-streak").textContent = streak ?? 0;
+    document.getElementById("stat-ouvidos").textContent = ouvidos ?? 0;
+
+    // Sugestão de hoje: os conteúdos mais recentes do catálogo.
+    // Critério simples por enquanto — dá pra refinar depois (ex:
+    // priorizar conteúdo do guia do dia, ou o que o usuário ainda
+    // não ouviu).
+    const sugestoes = [...appState.conteudos]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 3);
+    renderHomeSuggestions(sugestoes);
+  }
+
+  function renderHomeSuggestions(items) {
+    const container = document.getElementById("home-suggestions");
+    if (!items.length) {
+      container.innerHTML = '<p class="empty-note">Nenhum conteúdo publicado ainda.</p>';
+      return;
+    }
+    container.innerHTML = items.map(item => `
+      <div class="list-item" onclick="onOpenTrack('${item.id}')">
+        <div class="dot">${dotConteudo(item)}</div>
+        <div class="meta">
+          <p class="title">${escapeHtml(item.titulo)}</p>
+          <p class="sub">${subConteudo(item)}</p>
+        </div>
+        <span class="chev">›</span>
+      </div>
+    `).join("");
+  }
+
+  function onOpenNotifications() {
+    // Sem central de notificações ainda — sem TODO pendente de dado,
+    // é só uma tela que ainda não foi desenhada.
+  }
+
+  /* ==========================================================
+     BIBLIOTECA
+     ========================================================== */
+  function setBibliotecaTradicao(tradicao) {
+    appState.bibliotecaTradicao = tradicao;
+    appState.bibliotecaGuiaAberto = null;
+    appState.bibliotecaRiscadoAberto = null;
+    renderTradicaoChips();
+    atualizarLabelsAbas();
+    renderBibliotecaList();
+  }
+
+  function renderTradicaoChips() {
+    const container = document.getElementById("tradicao-filters");
+    const tradicoes = [...new Set(appState.guias.map(g => g.tradicao || "umbanda"))].sort();
+    if (!tradicoes.includes(appState.bibliotecaTradicao)) {
+      appState.bibliotecaTradicao = tradicoes[0] || "umbanda";
+    }
+    container.innerHTML = tradicoes.map(t => `
+      <div class="filter ${t === appState.bibliotecaTradicao ? "active" : ""}" onclick="setBibliotecaTradicao('${t}')">
+        ${escapeHtml(TRADICAO_NOME[t] || (t.charAt(0).toUpperCase() + t.slice(1)))}
+      </div>
+    `).join("");
+  }
+
+  function atualizarLabelsAbas() {
+    const t = appState.bibliotecaTradicao;
+    document.querySelector('#biblioteca-filters .filter[data-cat="orixas"]').textContent = labelGrupo(t, "principal");
+    document.querySelector('#biblioteca-filters .filter[data-cat="entidades"]').textContent = labelGrupo(t, "auxiliar");
+  }
+
+  function setBibliotecaCategoria(cat, el) {
+    document.querySelectorAll("#biblioteca-filters .filter").forEach(f => f.classList.remove("active"));
+    el.classList.add("active");
+    appState.bibliotecaCategoria = cat;
+    appState.bibliotecaGuiaAberto = null;
+    appState.bibliotecaRiscadoAberto = null;
+    renderBibliotecaList();
+  }
+
+  function contarConteudos(guiaId, tipo) {
+    return appState.conteudos.filter(c => c.guia_id === guiaId && c.tipo === tipo).length;
+  }
+
+  // Guias da tradição ativa — usado como base por todos os modos da Biblioteca
+  function guiasDaTradicao() {
+    return appState.guias.filter(g => (g.tradicao || "umbanda") === appState.bibliotecaTradicao);
+  }
+
+  function renderBibliotecaList() {
+    const container = document.getElementById("biblioteca-list");
+    const idsDaTradicao = new Set(guiasDaTradicao().map(g => g.id));
+
+    // Modo "detalhe de um guia": mostra os conteúdos dele, com botão de voltar embutido na lista
+    if (appState.bibliotecaGuiaAberto) {
+      const guia = appState.guias.find(g => g.slug === appState.bibliotecaGuiaAberto);
+      const conteudos = appState.conteudos.filter(c => c.guia_id === guia.id);
+      let html = `<div class="back-row" onclick="fecharDetalheGuia()">‹ Voltar</div>`;
+      html += conteudos.length
+        ? conteudos.map(item => `
+            <div class="list-item" onclick="onOpenTrack('${item.id}')">
+              <div class="dot">${dotConteudo(item)}</div>
+              <div class="meta">
+                <p class="title">${escapeHtml(item.titulo)}</p>
+                <p class="sub">${subConteudo(item)}</p>
+              </div>
+              <span class="chev">›</span>
+            </div>
+          `).join("")
+        : '<p class="empty-note">Ainda sem pontos, orações ou contos cadastrados pra esse guia.</p>';
+      container.innerHTML = html;
+      return;
+    }
+
+    // Modo "detalhe de um ponto riscado": mostra a imagem grande + atalho pro guia
+    if (appState.bibliotecaRiscadoAberto) {
+      const guia = appState.guias.find(g => g.slug === appState.bibliotecaRiscadoAberto);
+      container.innerHTML = `
+        <div class="back-row" onclick="fecharDetalheRiscado()">‹ Voltar</div>
+        <img src="${guia.ponto_riscado_url}" style="width:100%; border-radius:16px; margin-bottom:16px;">
+        <h3 style="margin-bottom:6px;">${escapeHtml(guia.nome)}</h3>
+        <p style="font-size:13px; color:var(--ink-soft); line-height:1.5; margin-bottom:16px;">${escapeHtml(guia.descricao || "")}</p>
+        <div class="signout-btn" onclick="onVerGuiaDoRiscado('${guia.slug}')">Ver pontos e orações de ${escapeHtml(guia.nome)}</div>
+      `;
+      return;
+    }
+
+    // Modo "Itans": lista plana de todos os contos/histórias, da tradição ativa
+    if (appState.bibliotecaCategoria === "itans") {
+      const itans = appState.conteudos.filter(c => c.tipo === "conto" && idsDaTradicao.has(c.guia_id));
+      container.innerHTML = itans.length
+        ? itans.map(item => {
+            const guia = appState.guias.find(g => g.id === item.guia_id);
+            return `
+              <div class="list-item" onclick="onOpenTrack('${item.id}')">
+                <div class="dot">${dotConteudo(item)}</div>
+                <div class="meta">
+                  <p class="title">${escapeHtml(item.titulo)}</p>
+                  <p class="sub">${guia ? escapeHtml(guia.nome) : "Itã"}</p>
+                </div>
+                <span class="chev">›</span>
+              </div>
+            `;
+          }).join("")
+        : '<p class="empty-note">Nenhum Itã publicado ainda nessa tradição.</p>';
+      return;
+    }
+
+    // Modo "Pontos Cantados": lista plana de todos os conteúdos tipo ponto, da tradição ativa
+    if (appState.bibliotecaCategoria === "pontos") {
+      const pontos = appState.conteudos.filter(c => c.tipo === "ponto" && idsDaTradicao.has(c.guia_id));
+      container.innerHTML = pontos.length
+        ? pontos.map(item => {
+            const guia = appState.guias.find(g => g.id === item.guia_id);
+            return `
+              <div class="list-item" onclick="onOpenTrack('${item.id}')">
+                <div class="dot">${dotConteudo(item)}</div>
+                <div class="meta">
+                  <p class="title">${escapeHtml(item.titulo)}</p>
+                  <p class="sub">${guia ? escapeHtml(guia.nome) + " · " : ""}${formatDuracao(item.duracao_segundos)}</p>
+                </div>
+                <span class="chev">›</span>
+              </div>
+            `;
+          }).join("")
+        : '<p class="empty-note">Nenhum ponto cantado publicado ainda nessa tradição.</p>';
+      return;
+    }
+
+    // Modo "Pontos Riscados": lista plana dos guias da tradição ativa que já têm imagem cadastrada
+    if (appState.bibliotecaCategoria === "riscados") {
+      const riscados = guiasDaTradicao().filter(g => g.ponto_riscado_url);
+      container.innerHTML = riscados.length
+        ? riscados.map(guia => `
+            <div class="list-item" onclick="onOpenRiscado('${guia.slug}')">
+              <div class="dot" style="padding:0; overflow:hidden;"><img src="${guia.ponto_riscado_url}" style="width:100%; height:100%; object-fit:cover;"></div>
+              <div class="meta"><p class="title">${escapeHtml(guia.nome)}</p><p class="sub">${escapeHtml(guia.linha || "")}</p></div>
+              <span class="chev">›</span>
+            </div>
+          `).join("")
+        : '<p class="empty-note">Nenhum ponto riscado cadastrado ainda nessa tradição.</p>';
+      return;
+    }
+
+    // Modo "Principais" / "Auxiliares" (Orixás/Entidades, Lwa/Outras, Orishas/Otras...): guias por grupo, dentro da tradição ativa
+    const grupoDaAba = appState.bibliotecaCategoria === "orixas" ? "principal" : "auxiliar";
+    const lista = guiasDaTradicao().filter(g => (g.grupo || "principal") === grupoDaAba);
+
+    container.innerHTML = lista.length
+      ? lista.map(guia => `
+          <div class="list-item" onclick="onOpenGuia('${guia.slug}')">
+            <div class="dot">${guia.nome.charAt(0)}</div>
+            <div class="meta">
+              <p class="title">${escapeHtml(guia.nome)}</p>
+              <p class="sub">${guia.categoria ? escapeHtml(guia.categoria) + " · " : ""}${contarConteudos(guia.id, "ponto")} pontos · ${contarConteudos(guia.id, "oracao")} orações</p>
+            </div>
+            <span class="chev">›</span>
+          </div>
+        `).join("")
+      : '<p class="empty-note">Nenhum guia nesse grupo ainda.</p>';
+  }
+
+  function onOpenGuia(slug) {
+    appState.bibliotecaGuiaAberto = slug;
+    renderBibliotecaList();
+  }
+
+  function fecharDetalheGuia() {
+    appState.bibliotecaGuiaAberto = null;
+    renderBibliotecaList();
+  }
+
+  function onOpenRiscado(slug) {
+    appState.bibliotecaRiscadoAberto = slug;
+    renderBibliotecaList();
+  }
+
+  function fecharDetalheRiscado() {
+    appState.bibliotecaRiscadoAberto = null;
+    renderBibliotecaList();
+  }
+
+  function onVerGuiaDoRiscado(slug) {
+    appState.bibliotecaRiscadoAberto = null;
+    appState.bibliotecaGuiaAberto = slug;
+    renderBibliotecaList();
+  }
+
+  function onOpenSearch() {
+    // Busca dentro da Biblioteca ainda não desenhada — quando entrar
+    // no escopo, filtra appState.guias/appState.conteudos por texto,
+    // sem precisar de chamada nova ao Supabase.
+  }
+
+  /* ==========================================================
+     PLAYER
+     ========================================================== */
+  function onOpenTrack(conteudoId) {
+    const item = appState.conteudos.find(c => c.id === conteudoId);
+    if (!item) return;
+    appState.currentTrackId = conteudoId;
+
+    const guia = appState.guias.find(g => g.id === item.guia_id);
+    document.getElementById("player-title").textContent = item.titulo;
+    document.getElementById("player-sub").textContent = item.voz
+      ? "Voz: " + item.voz
+      : (guia ? guia.nome : "");
+
+    const art = document.getElementById("player-art");
+    if (item.imagem_url) {
+      art.style.background = `url('${item.imagem_url}') center/cover`;
+      art.innerHTML = "";
+    } else {
+      art.style.background = "";
+      art.innerHTML = '<div class="ring"></div>';
+    }
+
+    const audio = document.getElementById("audio-player");
+    const playBtn = document.getElementById("play-pause-btn");
+    audio.pause();
+    audio.currentTime = 0;
+
+    const audioSection = document.getElementById("player-audio-section");
+    if (item.audio_url) {
+      audio.src = item.audio_url;
+      playBtn.disabled = false;
+      playBtn.style.opacity = 1;
+      audioSection.style.display = "";
+    } else {
+      audio.removeAttribute("src");
+      playBtn.disabled = true;
+      playBtn.style.opacity = 0.4;
+      audioSection.style.display = "none";
+    }
+
+    document.getElementById("player-time-total").textContent = formatDuracao(item.duracao_segundos);
+    document.getElementById("player-time-current").textContent = "0:00";
+    updateWaveformProgress(0);
+
+    document.getElementById("lyric-toggle-label").textContent =
+      item.tipo === "ponto" ? "Letra do ponto" : item.tipo === "conto" ? "Ler o conto" : "Ler a oração";
+    const letraBox = document.getElementById("letra-box");
+    letraBox.textContent = item.letra || "Texto ainda não cadastrado.";
+    // Sem áudio, o texto é o próprio conteúdo — já abre expandido
+    letraBox.classList.toggle("open", !item.audio_url);
+    document.getElementById("lyric-chevron").textContent = item.audio_url ? "⌄" : "⌃";
+
+    appState.isPlaying = false;
+    playBtn.textContent = "▶";
+
+    showView("player");
+  }
+
+  function onTogglePlay() {
+    const audio = document.getElementById("audio-player");
+    const btn = document.getElementById("play-pause-btn");
+    if (!audio.src) return;
+    if (audio.paused) {
+      audio.play();
+      appState.isPlaying = true;
+      btn.textContent = "❚❚";
+    } else {
+      audio.pause();
+      appState.isPlaying = false;
+      btn.textContent = "▶";
+    }
+  }
+
+  function onSkip(direction) {
+    // Pular pra próxima/anterior faixa dentro da mesma lista (playlist
+    // de sugestões ou de um guia) fica pra quando existir de fato uma
+    // playlist ordenada em uso — hoje o player sempre abre a partir de
+    // um item específico clicado, sem "fila" implícita.
+  }
+
+  function onToggleLyrics() {
+    const box = document.getElementById("letra-box");
+    const chevron = document.getElementById("lyric-chevron");
+    box.classList.toggle("open");
+    chevron.textContent = box.classList.contains("open") ? "⌃" : "⌄";
+  }
+
+  function updateWaveformProgress(percentPlayed) {
+    const bars = document.querySelectorAll("#player-waveform .bar");
+    const total = bars.length;
+    const played = Math.round((percentPlayed / 100) * total);
+    bars.forEach((bar, i) => bar.classList.toggle("played", i < played));
+  }
+
+  function updatePlayerTime(currentSeconds, totalSeconds) {
+    document.getElementById("player-time-current").textContent = formatDuracao(currentSeconds);
+    if (totalSeconds) {
+      document.getElementById("player-time-total").textContent = formatDuracao(totalSeconds);
+    }
+  }
+
+  document.getElementById("audio-player").addEventListener("timeupdate", (e) => {
+    const audio = e.target;
+    if (!audio.duration) return;
+    updatePlayerTime(Math.floor(audio.currentTime), Math.floor(audio.duration));
+    updateWaveformProgress((audio.currentTime / audio.duration) * 100);
+  });
+
+  document.getElementById("audio-player").addEventListener("ended", () => {
+    appState.isPlaying = false;
+    document.getElementById("play-pause-btn").textContent = "▶";
+    if (appState.currentTrackId) markTrackAsCompleted(appState.currentTrackId);
+  });
+
+  /* ==========================================================
+     STREAK / LOG DE ESCUTA
+     ========================================================== */
+  async function markTrackAsCompleted(conteudoId) {
+    const { error } = await supabaseClient.from("escutas").insert({
+      user_id: appState.user.id,
+      conteudo_id: conteudoId,
+    });
+    if (error) {
+      console.error("Erro ao registrar escuta:", error);
+      return;
+    }
+    // Recalcula os números da Home e do Perfil pra refletir a escuta nova
+    await Promise.all([loadHomeData(), loadPerfilData()]);
+  }
+
+  /* ==========================================================
+     PERFIL
+     ========================================================== */
+  async function loadPerfilData() {
+    const meta = appState.user.user_metadata || {};
+    const nome = meta.full_name || appState.user.email;
+    document.getElementById("perfil-nome").textContent = nome;
+    document.getElementById("perfil-email").textContent = appState.user.email;
+    document.getElementById("perfil-inicial").textContent = nome.charAt(0).toUpperCase();
+
+    const { data: streak } = await supabaseClient.rpc("get_streak", { p_user_id: appState.user.id });
+    const { data: ouvidos } = await supabaseClient.rpc("get_total_ouvidos", { p_user_id: appState.user.id });
+    document.getElementById("perfil-streak").textContent = streak ?? 0;
+    document.getElementById("perfil-ouvidos").textContent = ouvidos ?? 0;
+  }
+
+  /* ==========================================================
+     HELPERS
+     ========================================================== */
+  function formatDuracao(segundos) {
+    if (!segundos && segundos !== 0) return "—";
+    const m = Math.floor(segundos / 60);
+    const s = Math.floor(segundos % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  }
+
+  function iconeConteudo(tipo) {
+    return tipo === "ponto" ? "▶" : tipo === "conto" ? "📖" : "≡";
+  }
+  function dotConteudo(item) {
+    return item.imagem_url
+      ? `<img src="${item.imagem_url}" style="width:100%; height:100%; object-fit:cover;">`
+      : iconeConteudo(item.tipo);
+  }
+  function subConteudo(item) {
+    if (item.tipo === "ponto") return formatDuracao(item.duracao_segundos) + " · áudio";
+    if (item.tipo === "conto") return "Conto/história";
+    return "Leitura";
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+    return div.innerHTML;
+  }
+
+  /* ==========================================================
+     INICIALIZAÇÃO
+     ========================================================== */
+  document.addEventListener("DOMContentLoaded", () => {
+    checkSession();
+  });
+</script>
+
+</body>
+</html>
