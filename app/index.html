@@ -255,9 +255,9 @@
     <!-- ================= LOGIN ================= -->
     <section id="view-login" class="view login-view active">
       <div class="login-box">
-        <p class="eyebrow">Tradições e raízes</p>
+        <p class="eyebrow">Povos originários</p>
         <h1>Raízes</h1>
-        <p class="desc">Guias, pontos cantados, orações — e a história dos povos que vieram antes.</p>
+        <p class="desc">Um catálogo de estudo sobre povos originários e suas tradições — culturas, guias, pontos e orações documentados.</p>
         <button class="google-btn" onclick="onSignInWithGoogle()">
           <span>Continuar com Google</span>
         </button>
@@ -268,51 +268,33 @@
     <!-- ================= HOME ================= -->
     <section id="view-home" class="view">
       <div class="top-row">
-        <span class="greeting">Boa tarde, <span id="user-name">Marcos</span></span>
-        <div class="icon-btn" onclick="onOpenNotifications()">•</div>
+        <span class="greeting">Visão geral</span>
       </div>
 
       <div class="home-hero">
-        <div class="guia-card">
+        <div class="guia-card" id="destaque-card" onclick="onOpenDestaque()" style="cursor:pointer;">
           <div class="ring"></div>
           <div class="ring small"></div>
-          <p class="eyebrow" id="guia-do-dia-label">Guia do dia</p>
-          <h2 id="guia-do-dia-nome">Ogum</h2>
-          <p class="sub" id="guia-do-dia-info">Terça-feira · linha de guerreiro</p>
+          <p class="eyebrow">Cultura em destaque</p>
+          <h2 id="destaque-nome">—</h2>
+          <p class="sub" id="destaque-info">—</p>
         </div>
 
         <div class="stat-row">
           <div class="stat">
-            <p class="num" id="stat-streak">12</p>
-            <p class="label">dias<br>seguidos</p>
+            <p class="num" id="stat-culturas">—</p>
+            <p class="label">culturas<br>catalogadas</p>
           </div>
           <div class="stat">
-            <p class="num" id="stat-ouvidos">6</p>
-            <p class="label">pontos<br>ouvidos</p>
+            <p class="num" id="stat-guias">—</p>
+            <p class="label">guias<br>documentados</p>
           </div>
         </div>
       </div>
 
-      <p class="section-label">Sugestão de hoje</p>
+      <p class="section-label">Pontos de partida</p>
       <div id="home-suggestions" class="list-grid">
-        <!-- Conteúdo abaixo é só placeholder visual — renderHomeSuggestions()
-             substitui isso assim que os dados reais chegam do Supabase -->
-        <div class="list-item" onclick="onOpenTrack('saudacao-ogum')">
-          <div class="dot">▶</div>
-          <div class="meta">
-            <p class="title">Saudação a Ogum</p>
-            <p class="sub">3 min · áudio</p>
-          </div>
-          <span class="chev">›</span>
-        </div>
-        <div class="list-item" onclick="onOpenTrack('abertura-gira')">
-          <div class="dot">≡</div>
-          <div class="meta">
-            <p class="title">Oração de abertura de gira</p>
-            <p class="sub">Leitura</p>
-          </div>
-          <span class="chev">›</span>
-        </div>
+        <!-- renderHomeDestaque() preenche isso a partir de appState.culturas/guias -->
       </div>
     </section>
 
@@ -455,16 +437,6 @@
           <p class="profile-email" id="perfil-email">—</p>
         </div>
       </div>
-      <div class="stat-row" style="flex-direction:row; max-width:360px; margin-bottom:20px;">
-        <div class="stat">
-          <p class="num" id="perfil-streak">0</p>
-          <p class="label">dias<br>seguidos</p>
-        </div>
-        <div class="stat">
-          <p class="num" id="perfil-ouvidos">0</p>
-          <p class="label">pontos<br>ouvidos</p>
-        </div>
-      </div>
       <div class="signout-btn" onclick="onSignOut()">Sair da conta</div>
     </section>
 
@@ -472,8 +444,6 @@
 
 <script>
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  const DIAS_SEMANA = ["Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"];
 
   /* ==========================================================
      ESTADO
@@ -566,7 +536,8 @@
   }
 
   async function onAuthReady() {
-    await Promise.all([loadCatalogo(), loadHomeData(), loadPerfilData()]);
+    await loadCatalogo();
+    await Promise.all([loadHomeData(), loadPerfilData()]);
     renderTradicaoChips();
     atualizarLabelsAbas();
     renderBibliotecaList();
@@ -752,61 +723,58 @@
   /* ==========================================================
      HOME
      ========================================================== */
-  async function loadHomeData() {
-    const nome = (appState.user.user_metadata && appState.user.user_metadata.full_name)
-      ? appState.user.user_metadata.full_name.split(" ")[0]
-      : appState.user.email;
-    document.getElementById("user-name").textContent = nome;
+  let destaqueSlugAtual = null;
 
-    const { data: guiaDoDia, error: errGuiaDoDia } = await supabaseClient
-      .from("guia_do_dia_hoje").select("*").maybeSingle();
-    if (errGuiaDoDia) console.error("Erro ao carregar guia do dia:", errGuiaDoDia);
-    if (guiaDoDia) {
-      const diaLabel = DIAS_SEMANA[new Date().getDay()];
-      document.getElementById("guia-do-dia-nome").textContent = guiaDoDia.nome;
-      document.getElementById("guia-do-dia-info").textContent =
-        diaLabel + (guiaDoDia.linha ? " · " + guiaDoDia.linha : "");
+  async function loadHomeData() {
+    document.getElementById("stat-culturas").textContent = appState.culturas.length;
+    document.getElementById("stat-guias").textContent = appState.guias.length;
+
+    if (appState.culturas.length) {
+      const destaque = appState.culturas[Math.floor(Math.random() * appState.culturas.length)];
+      destaqueSlugAtual = destaque.slug;
+      document.getElementById("destaque-nome").textContent = destaque.nome;
+      document.getElementById("destaque-info").textContent = destaque.regiao_origem || "";
     } else {
-      document.getElementById("guia-do-dia-nome").textContent = "—";
-      document.getElementById("guia-do-dia-info").textContent = "Nenhum guia definido pra hoje ainda";
+      document.getElementById("destaque-nome").textContent = "—";
+      document.getElementById("destaque-info").textContent = "Nenhuma cultura cadastrada ainda";
     }
 
-    const { data: streak } = await supabaseClient.rpc("get_streak", { p_user_id: appState.user.id });
-    const { data: ouvidos } = await supabaseClient.rpc("get_total_ouvidos", { p_user_id: appState.user.id });
-    document.getElementById("stat-streak").textContent = streak ?? 0;
-    document.getElementById("stat-ouvidos").textContent = ouvidos ?? 0;
-
-    // Sugestão de hoje: os conteúdos mais recentes do catálogo.
-    // Critério simples por enquanto — dá pra refinar depois (ex:
-    // priorizar conteúdo do guia do dia, ou o que o usuário ainda
-    // não ouviu).
-    const sugestoes = [...appState.conteudos]
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .slice(0, 3);
-    renderHomeSuggestions(sugestoes);
+    // Pontos de partida: algumas culturas e alguns guias, como
+    // sugestão de onde começar a explorar o catálogo.
+    const culturasSugeridas = appState.culturas.filter(c => c.slug !== destaqueSlugAtual).slice(0, 2);
+    const guiasSugeridos = appState.guias.slice(0, 2);
+    renderHomeSuggestions(culturasSugeridas, guiasSugeridos);
   }
 
-  function renderHomeSuggestions(items) {
+  function onOpenDestaque() {
+    if (destaqueSlugAtual) onOpenCultura(destaqueSlugAtual);
+  }
+
+  function renderHomeSuggestions(culturas, guias) {
     const container = document.getElementById("home-suggestions");
-    if (!items.length) {
-      container.innerHTML = '<p class="empty-note">Nenhum conteúdo publicado ainda.</p>';
+    if (!culturas.length && !guias.length) {
+      container.innerHTML = '<p class="empty-note">Nenhum conteúdo catalogado ainda.</p>';
       return;
     }
-    container.innerHTML = items.map(item => `
-      <div class="list-item" onclick="onOpenTrack('${item.id}')">
-        <div class="dot">${dotConteudo(item)}</div>
+    const itensCultura = culturas.map(c => `
+      <div class="list-item" onclick="onOpenCultura('${c.slug}')">
+        <div class="dot">${escapeHtml(c.nome.charAt(0))}</div>
         <div class="meta">
-          <p class="title">${escapeHtml(item.titulo)}</p>
-          <p class="sub">${subConteudo(item)}</p>
+          <p class="title">${escapeHtml(c.nome)}</p>
+          <p class="sub">${escapeHtml(c.regiao_origem || "Cultura")}</p>
         </div>
         <span class="chev">›</span>
-      </div>
-    `).join("");
-  }
-
-  function onOpenNotifications() {
-    // Sem central de notificações ainda — sem TODO pendente de dado,
-    // é só uma tela que ainda não foi desenhada.
+      </div>`);
+    const itensGuia = guias.map(g => `
+      <div class="list-item" onclick="onOpenGuia('${g.slug}')">
+        <div class="dot">${escapeHtml(g.nome.charAt(0))}</div>
+        <div class="meta">
+          <p class="title">${escapeHtml(g.nome)}</p>
+          <p class="sub">${TRADICAO_NOME[g.tradicao] || g.tradicao}</p>
+        </div>
+        <span class="chev">›</span>
+      </div>`);
+    container.innerHTML = itensCultura.concat(itensGuia).join("");
   }
 
   /* ==========================================================
@@ -1115,24 +1083,7 @@
   document.getElementById("audio-player").addEventListener("ended", () => {
     appState.isPlaying = false;
     document.getElementById("play-pause-btn").textContent = "▶";
-    if (appState.currentTrackId) markTrackAsCompleted(appState.currentTrackId);
   });
-
-  /* ==========================================================
-     STREAK / LOG DE ESCUTA
-     ========================================================== */
-  async function markTrackAsCompleted(conteudoId) {
-    const { error } = await supabaseClient.from("escutas").insert({
-      user_id: appState.user.id,
-      conteudo_id: conteudoId,
-    });
-    if (error) {
-      console.error("Erro ao registrar escuta:", error);
-      return;
-    }
-    // Recalcula os números da Home e do Perfil pra refletir a escuta nova
-    await Promise.all([loadHomeData(), loadPerfilData()]);
-  }
 
   /* ==========================================================
      PERFIL
@@ -1143,11 +1094,6 @@
     document.getElementById("perfil-nome").textContent = nome;
     document.getElementById("perfil-email").textContent = appState.user.email;
     document.getElementById("perfil-inicial").textContent = nome.charAt(0).toUpperCase();
-
-    const { data: streak } = await supabaseClient.rpc("get_streak", { p_user_id: appState.user.id });
-    const { data: ouvidos } = await supabaseClient.rpc("get_total_ouvidos", { p_user_id: appState.user.id });
-    document.getElementById("perfil-streak").textContent = streak ?? 0;
-    document.getElementById("perfil-ouvidos").textContent = ouvidos ?? 0;
   }
 
   /* ==========================================================
