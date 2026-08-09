@@ -88,8 +88,8 @@
       </div>
 
       <div class="tabs">
-        <span class="tab-btn active" id="tab-guias" onclick="switchTab('guias')">Guias</span>
-        <span class="tab-btn" id="tab-conteudos" onclick="switchTab('conteudos')">Conteúdos</span>
+        <span class="tab-btn active" id="tab-guias" onclick="switchTab('guias')">Entidades</span>
+        <span class="tab-btn" id="tab-conteudos" onclick="switchTab('conteudos')">Contos</span>
         <span class="tab-btn" id="tab-culturas" onclick="switchTab('culturas')">Culturas</span>
         <span class="tab-btn" id="tab-buzios" onclick="switchTab('buzios')">Búzios</span>
       </div>
@@ -121,23 +121,37 @@
           </div>
           <div class="row">
             <div>
-              <label>Grupo</label>
-              <select id="guia-grupo">
-                <option value="principal">Principal (Orixá / Lwa / Orisha / Nkisi...)</option>
-                <option value="auxiliar">Auxiliar (Entidade: preto-velho, caboclo, Gede...)</option>
+              <label>Classificação</label>
+              <select id="guia-classificacao">
+                <option value="divindade">Divindade / Força da natureza (Orixá, Vodum, Loa, Orisha, Nkisi)</option>
+                <option value="ancestral">Ancestral (Preto-velho, Egun)</option>
+                <option value="espirito-natureza">Espírito da natureza (Caboclo, Encantado)</option>
+                <option value="guardiao">Guardião das encruzilhadas (Exu, Pombagira, Elegguá)</option>
+                <option value="mestre">Mestre (guia de Jurema)</option>
+                <option value="crianca">Criança espiritual (Erê)</option>
               </select>
             </div>
             <div>
-              <label>Categoria (rótulo livre, só descritivo)</label>
-              <input type="text" id="guia-categoria" placeholder="Preto-velho, Lwa Rada, Orisha...">
+              <label>Tradição (opcional, metadado adicional)</label>
+              <input type="text" id="guia-tradicao" list="lista-tradicoes" placeholder="umbanda">
+              <datalist id="lista-tradicoes">
+                <option value="umbanda">
+                <option value="candomble">
+                <option value="vodum">
+                <option value="santeria">
+                <option value="jurema">
+                <option value="quimbanda">
+              </datalist>
             </div>
           </div>
-          <label>Origem cultural (catálogo estruturado — evita digitar de novo em cada guia)</label>
+          <label>Origem cultural</label>
           <select id="guia-origem-cultural"><option value="">— nenhuma —</option></select>
-          <label>Linha (aparece no card do dia)</label>
+          <label>Linha (opcional)</label>
           <input type="text" id="guia-linha" placeholder="linha de guerreiro">
           <label>Descrição</label>
           <textarea id="guia-descricao" placeholder="Texto curto de apresentação"></textarea>
+          <label>Elementos de hierofania — um por linha, no formato "rótulo | valor"</label>
+          <textarea id="guia-hierofania" placeholder="Cor | Vermelho e branco&#10;Elemento | Ferro&#10;Dia | Terça-feira&#10;Saudação | Ogunhê!"></textarea>
           <label>Ponto riscado (imagem) — deixe em branco pra manter o atual</label>
           <input type="hidden" id="guia-ponto-riscado-url">
           <input type="file" id="guia-riscado-arquivo" accept="image/*">
@@ -154,54 +168,34 @@
             </div>
           </div>
           <div style="margin-top:16px; display:flex; gap:10px;">
-            <button class="btn btn-primary" onclick="saveGuia()">Salvar guia</button>
-            <button class="btn" onclick="resetGuiaForm()">Novo guia</button>
+            <button class="btn btn-primary" onclick="saveGuia()">Salvar entidade</button>
+            <button class="btn" onclick="resetGuiaForm()">Nova entidade</button>
           </div>
         </div>
 
         <div class="card">
-          <h2>Guias cadastrados</h2>
+          <h2>Entidades cadastradas</h2>
           <table>
-            <thead><tr><th>Nome</th><th>Tradição</th><th>Grupo / Categoria</th><th>Ordem</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Nome</th><th>Classificação</th><th>Cultura</th><th>Ordem</th><th>Status</th><th></th></tr></thead>
             <tbody id="guias-table"></tbody>
           </table>
         </div>
       </div>
 
-      <!-- ---------- CONTEÚDOS ---------- -->
+      <!-- ---------- CONTOS (itãs / histórias) ---------- -->
       <div id="panel-conteudos" style="display:none;">
         <div class="card">
-          <h2 id="conteudo-form-title">Novo conteúdo</h2>
+          <h2 id="conteudo-form-title">Novo conto</h2>
           <input type="hidden" id="conteudo-id">
-          <input type="hidden" id="conteudo-audio-url">
-          <input type="hidden" id="conteudo-duracao">
-          <div class="row">
-            <div>
-              <label>Guia</label>
-              <select id="conteudo-guia"></select>
-            </div>
-            <div>
-              <label>Tipo</label>
-              <select id="conteudo-tipo">
-                <option value="ponto">Ponto cantado</option>
-                <option value="oracao">Oração</option>
-                <option value="conto">Itã (conto / história)</option>
-              </select>
-            </div>
-          </div>
-          <label>Odu relacionado (opcional — só faz sentido pra um Itã)</label>
+          <input type="hidden" id="conteudo-tipo" value="conto">
+          <label>Entidade</label>
+          <select id="conteudo-guia"></select>
+          <label>Odu relacionado (opcional)</label>
           <select id="conteudo-odu"><option value="">— nenhum —</option></select>
           <label>Título</label>
-          <input type="text" id="conteudo-titulo" placeholder="Saudação a Ogum">
-          <label>Letra / Texto</label>
-          <textarea id="conteudo-letra" placeholder="Letra do ponto, texto da oração, ou o Itã completo"></textarea>
-          <label>Voz (crédito, opcional)</label>
-          <input type="text" id="conteudo-voz" placeholder="Marcos e Ana">
-
-          <label>Áudio (mp3) — deixe em branco pra manter o atual, se estiver editando. Não obrigatório pra contos/histórias.</label>
-          <input type="file" id="conteudo-arquivo" accept="audio/*">
-          <p id="upload-status"></p>
-          <audio id="conteudo-preview" controls style="display:none; margin-top:8px; width:100%;"></audio>
+          <input type="text" id="conteudo-titulo" placeholder="A saga de Ogum e a forja">
+          <label>Texto do conto</label>
+          <textarea id="conteudo-letra" placeholder="O Itã completo"></textarea>
 
           <label>Imagem (opcional) — capa do conto, retrato da entidade, etc.</label>
           <input type="hidden" id="conteudo-imagem-url">
@@ -221,15 +215,15 @@
           </div>
 
           <div style="margin-top:16px; display:flex; gap:10px;">
-            <button class="btn btn-primary" id="btn-salvar-conteudo" onclick="saveConteudo()">Salvar conteúdo</button>
-            <button class="btn" onclick="resetConteudoForm()">Novo conteúdo</button>
+            <button class="btn btn-primary" id="btn-salvar-conteudo" onclick="saveConteudo()">Salvar conto</button>
+            <button class="btn" onclick="resetConteudoForm()">Novo conto</button>
           </div>
         </div>
 
         <div class="card">
-          <h2>Conteúdos cadastrados</h2>
+          <h2>Contos cadastrados</h2>
           <table>
-            <thead><tr><th>Guia</th><th>Título</th><th>Tipo</th><th>Imagem</th><th>Áudio</th><th></th></tr></thead>
+            <thead><tr><th>Entidade</th><th>Título</th><th>Imagem</th><th></th></tr></thead>
             <tbody id="conteudos-table"></tbody>
           </table>
         </div>
@@ -491,7 +485,6 @@
   let conteudosCache = [];
   let culturasCache = [];
   let migracoesCache = [];
-  let pendingAudioFile = null;
   let pendingImagemFile = null;
   let pendingRiscadoFile = null;
 
@@ -553,6 +546,30 @@
     renderGuiaSelect();
   }
 
+  const CLASSIFICACAO_NOME = {
+    "divindade": "Divindade / Força da natureza",
+    "ancestral": "Ancestral",
+    "espirito-natureza": "Espírito da natureza",
+    "guardiao": "Guardião das encruzilhadas",
+    "mestre": "Mestre",
+    "crianca": "Criança espiritual",
+  };
+
+  function hierofaniaParaTexto(hierofania) {
+    if (!Array.isArray(hierofania)) return "";
+    return hierofania.map(h => `${h.label || ""} | ${h.valor || ""}`).join("\n");
+  }
+
+  function textoParaHierofania(texto) {
+    return texto.split("\n")
+      .map(l => l.trim())
+      .filter(Boolean)
+      .map(l => {
+        const [label, ...resto] = l.split("|");
+        return { label: (label || "").trim(), valor: resto.join("|").trim() };
+      });
+  }
+
   function renderGuiasTable() {
     const tbody = document.getElementById("guias-table");
     tbody.innerHTML = guiasCache.map(g => {
@@ -560,14 +577,14 @@
       return `
       <tr>
         <td>${escapeHtml(g.nome)}</td>
-        <td>${escapeHtml(g.tradicao || "umbanda")}</td>
-        <td>${g.grupo === "auxiliar" ? "Auxiliar" : "Principal"}${g.categoria ? " · " + escapeHtml(g.categoria) : ""}${cultura ? " · " + escapeHtml(cultura.nome) : ""}</td>
+        <td>${escapeHtml(CLASSIFICACAO_NOME[g.classificacao] || g.classificacao || "—")}</td>
+        <td>${cultura ? escapeHtml(cultura.nome) : "—"}</td>
         <td>${g.ordem}</td>
         <td><span class="badge ${g.ativo ? "" : "off"}">${g.ativo ? "ativo" : "oculto"}</span></td>
         <td><button class="btn btn-sm" onclick="editGuia('${g.id}')">Editar</button></td>
       </tr>
     `;
-    }).join("") || `<tr><td colspan="6" class="muted">Nenhum guia ainda.</td></tr>`;
+    }).join("") || `<tr><td colspan="6" class="muted">Nenhuma entidade ainda.</td></tr>`;
   }
 
   function renderOrigemCulturalSelect() {
@@ -587,12 +604,12 @@
     document.getElementById("guia-id").value = g.id;
     document.getElementById("guia-nome").value = g.nome || "";
     document.getElementById("guia-slug").value = g.slug || "";
-    document.getElementById("guia-tradicao").value = g.tradicao || "umbanda";
-    document.getElementById("guia-grupo").value = g.grupo || "principal";
-    document.getElementById("guia-categoria").value = g.categoria || "";
+    document.getElementById("guia-classificacao").value = g.classificacao || "divindade";
+    document.getElementById("guia-tradicao").value = g.tradicao || "";
     document.getElementById("guia-origem-cultural").value = g.origem_cultural_id || "";
     document.getElementById("guia-linha").value = g.linha || "";
     document.getElementById("guia-descricao").value = g.descricao || "";
+    document.getElementById("guia-hierofania").value = hierofaniaParaTexto(g.hierofania);
     document.getElementById("guia-ordem").value = g.ordem || 0;
     document.getElementById("guia-ativo").checked = !!g.ativo;
     document.getElementById("guia-ponto-riscado-url").value = g.ponto_riscado_url || "";
@@ -602,7 +619,7 @@
     const preview = document.getElementById("guia-riscado-preview");
     if (g.ponto_riscado_url) { preview.src = g.ponto_riscado_url; preview.style.display = "block"; }
     else { preview.style.display = "none"; }
-    document.getElementById("guia-form-title").textContent = "Editar guia";
+    document.getElementById("guia-form-title").textContent = "Editar entidade";
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -610,12 +627,12 @@
     document.getElementById("guia-id").value = "";
     document.getElementById("guia-nome").value = "";
     document.getElementById("guia-slug").value = "";
-    document.getElementById("guia-tradicao").value = "umbanda";
-    document.getElementById("guia-grupo").value = "principal";
-    document.getElementById("guia-categoria").value = "";
+    document.getElementById("guia-classificacao").value = "divindade";
+    document.getElementById("guia-tradicao").value = "";
     document.getElementById("guia-origem-cultural").value = "";
     document.getElementById("guia-linha").value = "";
     document.getElementById("guia-descricao").value = "";
+    document.getElementById("guia-hierofania").value = "";
     document.getElementById("guia-ordem").value = 0;
     document.getElementById("guia-ativo").checked = true;
     document.getElementById("guia-ponto-riscado-url").value = "";
@@ -623,7 +640,7 @@
     document.getElementById("guia-riscado-upload-status").textContent = "";
     document.getElementById("guia-riscado-preview").style.display = "none";
     pendingRiscadoFile = null;
-    document.getElementById("guia-form-title").textContent = "Novo guia";
+    document.getElementById("guia-form-title").textContent = "Nova entidade";
   }
 
   document.getElementById("guia-riscado-arquivo").addEventListener("change", (e) => {
@@ -649,12 +666,12 @@
       const payload = {
         nome: document.getElementById("guia-nome").value.trim(),
         slug: document.getElementById("guia-slug").value.trim(),
-        tradicao: document.getElementById("guia-tradicao").value.trim().toLowerCase() || "umbanda",
-        grupo: document.getElementById("guia-grupo").value,
-        categoria: document.getElementById("guia-categoria").value.trim() || null,
+        classificacao: document.getElementById("guia-classificacao").value,
+        tradicao: document.getElementById("guia-tradicao").value.trim().toLowerCase() || null,
         origem_cultural_id: document.getElementById("guia-origem-cultural").value || null,
         linha: document.getElementById("guia-linha").value.trim(),
         descricao: document.getElementById("guia-descricao").value.trim(),
+        hierofania: textoParaHierofania(document.getElementById("guia-hierofania").value),
         ordem: parseInt(document.getElementById("guia-ordem").value) || 0,
         ativo: document.getElementById("guia-ativo").checked,
         ponto_riscado_url: riscadoUrl,
@@ -690,13 +707,11 @@
         <tr>
           <td>${guia ? escapeHtml(guia.nome) : "—"}</td>
           <td>${escapeHtml(c.titulo)}</td>
-          <td>${c.tipo}</td>
           <td>${c.imagem_url ? `<img src="${c.imagem_url}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;">` : "—"}</td>
-          <td>${c.audio_url ? `<audio controls src="${c.audio_url}"></audio>` : `<span class="muted">sem áudio</span>`}</td>
           <td><button class="btn btn-sm" onclick="editConteudo('${c.id}')">Editar</button></td>
         </tr>
       `;
-    }).join("") || `<tr><td colspan="6" class="muted">Nenhum conteúdo ainda.</td></tr>`;
+    }).join("") || `<tr><td colspan="4" class="muted">Nenhum conto ainda.</td></tr>`;
   }
 
   function editConteudo(id) {
@@ -704,20 +719,11 @@
     if (!c) return;
     document.getElementById("conteudo-id").value = c.id;
     document.getElementById("conteudo-guia").value = c.guia_id;
-    document.getElementById("conteudo-tipo").value = c.tipo;
     document.getElementById("conteudo-odu").value = c.odu_id || "";
     document.getElementById("conteudo-titulo").value = c.titulo || "";
     document.getElementById("conteudo-letra").value = c.letra || "";
-    document.getElementById("conteudo-voz").value = c.voz || "";
     document.getElementById("conteudo-ordem").value = c.ordem || 0;
     document.getElementById("conteudo-ativo").checked = !!c.ativo;
-    document.getElementById("conteudo-audio-url").value = c.audio_url || "";
-    document.getElementById("conteudo-duracao").value = c.duracao_segundos || "";
-    document.getElementById("conteudo-arquivo").value = "";
-    pendingAudioFile = null;
-    const preview = document.getElementById("conteudo-preview");
-    if (c.audio_url) { preview.src = c.audio_url; preview.style.display = "block"; }
-    else { preview.style.display = "none"; }
     document.getElementById("conteudo-imagem-url").value = c.imagem_url || "";
     document.getElementById("conteudo-imagem-arquivo").value = "";
     document.getElementById("conteudo-imagem-status").textContent = "";
@@ -725,8 +731,7 @@
     const imagemPreview = document.getElementById("conteudo-imagem-preview");
     if (c.imagem_url) { imagemPreview.src = c.imagem_url; imagemPreview.style.display = "block"; }
     else { imagemPreview.style.display = "none"; }
-    document.getElementById("upload-status").textContent = "";
-    document.getElementById("conteudo-form-title").textContent = "Editar conteúdo";
+    document.getElementById("conteudo-form-title").textContent = "Editar conto";
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -735,33 +740,15 @@
     document.getElementById("conteudo-odu").value = "";
     document.getElementById("conteudo-titulo").value = "";
     document.getElementById("conteudo-letra").value = "";
-    document.getElementById("conteudo-voz").value = "";
     document.getElementById("conteudo-ordem").value = 0;
     document.getElementById("conteudo-ativo").checked = true;
-    document.getElementById("conteudo-audio-url").value = "";
-    document.getElementById("conteudo-duracao").value = "";
-    document.getElementById("conteudo-arquivo").value = "";
-    document.getElementById("conteudo-preview").style.display = "none";
-    document.getElementById("upload-status").textContent = "";
-    pendingAudioFile = null;
     document.getElementById("conteudo-imagem-url").value = "";
     document.getElementById("conteudo-imagem-arquivo").value = "";
     document.getElementById("conteudo-imagem-status").textContent = "";
     document.getElementById("conteudo-imagem-preview").style.display = "none";
     pendingImagemFile = null;
-    document.getElementById("conteudo-form-title").textContent = "Novo conteúdo";
+    document.getElementById("conteudo-form-title").textContent = "Novo conto";
   }
-
-  document.getElementById("conteudo-arquivo").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    pendingAudioFile = file;
-    const preview = document.getElementById("conteudo-preview");
-    preview.src = URL.createObjectURL(file);
-    preview.style.display = "block";
-    document.getElementById("upload-status").textContent = `Selecionado: ${file.name} — será enviado ao salvar.`;
-    document.getElementById("upload-status").classList.remove("error");
-  });
 
   document.getElementById("conteudo-imagem-arquivo").addEventListener("change", (e) => {
     const file = e.target.files[0];
@@ -773,24 +760,15 @@
     document.getElementById("conteudo-imagem-status").textContent = `Selecionado: ${file.name} — será enviado ao salvar.`;
   });
 
-  function getAudioDuration(file) {
-    return new Promise((resolve) => {
-      const audio = document.createElement("audio");
-      audio.preload = "metadata";
-      audio.onloadedmetadata = () => resolve(Math.round(audio.duration));
-      audio.src = URL.createObjectURL(file);
-    });
-  }
-
-  async function uploadAudio(file) {
+  async function uploadArquivo(file) {
     if (AUDIO_WORKER_URL.includes("COLE_AQUI")) {
-      throw new Error("Configure AUDIO_WORKER_URL no topo do script antes de subir áudio.");
+      throw new Error("Configure AUDIO_WORKER_URL no topo do script antes de subir arquivos.");
     }
     const resp = await fetch(AUDIO_WORKER_URL + "/upload", {
       method: "PUT",
       headers: {
         "Authorization": `Bearer ${session.access_token}`,
-        "Content-Type": file.type || "audio/mpeg",
+        "Content-Type": file.type || "application/octet-stream",
         "X-Filename": file.name,
       },
       body: file,
@@ -799,48 +777,33 @@
     if (!resp.ok) throw new Error(data.error || "Falha no upload");
     return data.url;
   }
+  const uploadAudio = uploadArquivo; // mantido: outros pontos do admin (imagem de guia/cultura) ainda chamam uploadAudio()
 
   async function saveConteudo() {
-    const statusEl = document.getElementById("upload-status");
     const btn = document.getElementById("btn-salvar-conteudo");
     const id = document.getElementById("conteudo-id").value;
-
-    let audioUrl = document.getElementById("conteudo-audio-url").value || null;
-    let duracao = document.getElementById("conteudo-duracao").value
-      ? parseInt(document.getElementById("conteudo-duracao").value) : null;
     let imagemUrl = document.getElementById("conteudo-imagem-url").value || null;
 
     try {
-      if (pendingAudioFile) {
-        btn.disabled = true;
-        statusEl.classList.remove("error");
-        statusEl.textContent = "Enviando áudio...";
-        duracao = await getAudioDuration(pendingAudioFile);
-        audioUrl = await uploadAudio(pendingAudioFile);
-        statusEl.textContent = "Áudio enviado.";
-      }
+      btn.disabled = true;
       if (pendingImagemFile) {
         document.getElementById("conteudo-imagem-status").textContent = "Enviando imagem...";
-        imagemUrl = await uploadAudio(pendingImagemFile);
+        imagemUrl = await uploadArquivo(pendingImagemFile);
         document.getElementById("conteudo-imagem-status").textContent = "Imagem enviada.";
       }
 
       const payload = {
         guia_id: document.getElementById("conteudo-guia").value,
-        tipo: document.getElementById("conteudo-tipo").value,
+        tipo: "conto",
         odu_id: document.getElementById("conteudo-odu").value || null,
         titulo: document.getElementById("conteudo-titulo").value.trim(),
         letra: document.getElementById("conteudo-letra").value.trim() || null,
-        voz: document.getElementById("conteudo-voz").value.trim() || null,
         ordem: parseInt(document.getElementById("conteudo-ordem").value) || 0,
         ativo: document.getElementById("conteudo-ativo").checked,
-        audio_url: audioUrl,
-        duracao_segundos: duracao,
         imagem_url: imagemUrl,
       };
       if (!payload.titulo || !payload.guia_id) {
-        alert("Guia e título são obrigatórios.");
-        btn.disabled = false;
+        alert("Entidade e título são obrigatórios.");
         return;
       }
 
@@ -852,8 +815,7 @@
       resetConteudoForm();
       await loadConteudos();
     } catch (err) {
-      statusEl.textContent = "Erro: " + err.message;
-      statusEl.classList.add("error");
+      document.getElementById("conteudo-imagem-status").textContent = "Erro: " + err.message;
     } finally {
       btn.disabled = false;
     }
